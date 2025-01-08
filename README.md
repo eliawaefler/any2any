@@ -1,1 +1,3 @@
-# dataspot_lakehub
+# SAMPLE PROJECT
+
+ich bin der Projektbeschrieb
