@@ -65,31 +65,32 @@ def main():
         # Display QUELLE structure on the left and ZIEL mapping options on the right
         mapping_table = []
         for sheet, columns in quelle_structure.items():
+            my_columns = list(columns)
             st.write(f"Mapping for Sheet: {sheet}")
             add_col = st.selectbox(
                 f"Additional Quelle Column",
                 columns,
-                key=f"add_quelle_{len(columns)}"
+                key=f"add_quelle_{len(my_columns)}"
             )
             if st.button("Add Column"):
                 columns.append(add_col)
-            for column in columns:
+            for column_nb in range(len(my_columns)):
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
-                    st.text(f"QUELLE Column: {column}")
+                    st.text(f"QUELLE Column: {my_columns[column_nb]}")
                 with col2:
                     l, r = st.columns(2)
                     with l:
                         rule = st.selectbox(
                             f"Select Rule",
                             rules,
-                            key=f"rule_{sheet}_{column}"
+                            key=f"rule_{sheet}_{column_nb}"
                         )
                     with r:
                         rule_param = st.text_input(
                             f"Rule Param",
-                            key=f"rule_param_{sheet}_{column}"
+                            key=f"rule_param_{sheet}_{column_nb}"
                         )
                 with col3:
                     l, r = st.columns(2)
@@ -97,27 +98,25 @@ def main():
                         ziel_sheet = st.selectbox(
                             f"Select ZIEL Sheet",
                             list(ziel_structure.keys()),
-                            key=f"Transformation_Rule_{sheet}_{column}"
+                            key=f"Transformation_Rule_{sheet}_{column_nb}"
                         )
                     with r:
                         ziel_column = st.selectbox(
                             f"Select ZIEL Column",
                             ziel_structure[ziel_sheet],
-                            key=f"ziel_column_{sheet}_{column}"
+                            key=f"ziel_column_{sheet}_{column_nb}"
                         )
 
                 mapping_table.append({
                     "Quelle_File": uploaded_quelle.name,
                     "Quelle_Sheet": sheet,
-                    "Quelle_Column": column,
+                    "Quelle_Column": my_columns[column_nb],
                     "Transformation_Rule": rule,
                     "Transformation_Rule_param": rule_param,
                     "Ziel_File": uploaded_ziel.name,
                     "Ziel_Sheet": ziel_sheet,
                     "Ziel_Column": ziel_column,
                 })
-
-
 
         # Display the mapping table
         if st.button("Generate Mapping Table"):
