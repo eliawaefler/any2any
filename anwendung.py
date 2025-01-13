@@ -74,7 +74,6 @@ def main():
             )
             if st.button("Add Column"):
                 my_columns.append(add_col)
-                st.rerun()
             for column_nb in range(len(my_columns)):
                 col1, col2, col3 = st.columns(3)
 
