@@ -22,7 +22,7 @@ def main():
     st.write("Excel File Mapper")
     # Step 1: Upload QUELLE and ZIEL files
     st.write("")
-    st.write("")
+    st.write(""
     st.write("")
     st.write("Step 1: Upload Excel Files")
     c1, c2, c3 = st.columns(3)
