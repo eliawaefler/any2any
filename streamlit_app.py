@@ -4,6 +4,11 @@ hier soll so übersichtlich wie mölgich das Projekt
  möglichst ohne funktionen klassen usw.
  alles komplizierte soll in functionality.py
  teständerung
+
+
+ TODO: requirements.txt
+ neon connecten
+
 """
 
 
