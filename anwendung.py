@@ -73,7 +73,8 @@ def main():
                 key=f"add_quelle_{len(my_columns)}"
             )
             if st.button("Add Column"):
-                columns.append(add_col)
+                my_columns.append(add_col)
+                st.rerun()
             for column_nb in range(len(my_columns)):
                 col1, col2, col3 = st.columns(3)
 
