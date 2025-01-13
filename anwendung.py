@@ -1,16 +1,13 @@
 """
-hier soll so übersichtlich wie mölgich das Projekt
+hier soll so übersichtlich wie möglich das Projekt
  abgehandelt werden,
  möglichst ohne funktionen klassen usw.
  alles komplizierte soll in functionality.py
  teständerung
 
-
- TODO: requirements.txt
- neon connecten
+#TODO: neon connection
 
 """
-
 
 import streamlit as st
 import pandas as pd
