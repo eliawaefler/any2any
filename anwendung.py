@@ -16,6 +16,14 @@ from functionality import *
 
 # Streamlit app
 def main():
+    rules = ["1:1", "ignore", "split", "concat", "divide", "multiply", "add"]
+    rule_infos = ["schreibt das attribut genau so von Quelle ins Ziel",
+                   "das Attribut wird nicht bearbeitet",
+                   "das Attribut der Quelle wird aufgeteilt, parameter ist das trennzeichen(in anführungszeichen), oder der trenn-index(zahl). das attribut muss zweimal aus der quelle importiert werden (zwei zeilen) um es in zwei verschiedene ziel attribute zu mappen.",
+                   "das Quellattribut wird mit anderen quellattributen in ein Ziel übertragen.",
+                   "mathematisch durch parameter Dividieren, Ergebniss ist eine KOMMAZAHL",
+                   "mathematisch mit param Multiplizieren",
+                   "mathematisch mit param addieren, param kann negativ sein."]
     st.set_page_config(layout="wide")
     if "mapper" not in st.session_state:
         st.session_state.counter = False
@@ -36,16 +44,35 @@ def main():
         uploaded_ziel = st.file_uploader("Upload ZIEL Excel File", type="xlsx", key="ziel")
 
     if st.button("New Mapping Table"):
-        st.session_state.create_mapper = True
+        if uploaded_quelle and uploaded_ziel:
+            st.session_state.create_mapper = True
+        else:
+            st.warning("upload a QUELLE and a ZIEL")
     if st.session_state.create_mapper:
+        if st.toggle("show rule information"):
+            st.subheader("Rule Information")
+            for rule_n in range(len(rules)):
+                l, r = st.columns(2)
+                with l:
+                    st.write(rules[rule_n])
+                with r:
+                    st.write(rule_infos[rule_n])
+
         st.write("Select Mappings")
         quelle_structure = extract_file_structure(uploaded_quelle)
         ziel_structure = extract_file_structure(uploaded_ziel)
-        rules = ["1:1", "split", "concat", "divide", "multiply", "add"]
+
         # Display QUELLE structure on the left and ZIEL mapping options on the right
         mapping_table = []
         for sheet, columns in quelle_structure.items():
             st.write(f"Mapping for Sheet: {sheet}")
+            add_col = st.selectbox(
+                f"Additional Quelle Column",
+                columns,
+                key=f"add_quelle_{len(columns)}"
+            )
+            if st.button("Add Column"):
+                columns.append(add_col)
             for column in columns:
                 col1, col2, col3 = st.columns(3)
 
@@ -78,16 +105,19 @@ def main():
                             ziel_structure[ziel_sheet],
                             key=f"ziel_column_{sheet}_{column}"
                         )
-                    mapping_table.append({
-                        "Quelle_File": uploaded_quelle.name,
-                        "Quelle_Sheet": sheet,
-                        "Quelle_Column": column,
-                        "Transformation_Rule": rule,
-                        "Transformation_Rule_param": rule_param,
-                        "Ziel_File": uploaded_ziel.name,
-                        "Ziel_Sheet": ziel_sheet,
-                        "Ziel_Column": ziel_column,
-                    })
+
+                mapping_table.append({
+                    "Quelle_File": uploaded_quelle.name,
+                    "Quelle_Sheet": sheet,
+                    "Quelle_Column": column,
+                    "Transformation_Rule": rule,
+                    "Transformation_Rule_param": rule_param,
+                    "Ziel_File": uploaded_ziel.name,
+                    "Ziel_Sheet": ziel_sheet,
+                    "Ziel_Column": ziel_column,
+                })
+
+
 
         # Display the mapping table
         if st.button("Generate Mapping Table"):
