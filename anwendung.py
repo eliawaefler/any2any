@@ -19,6 +19,8 @@ def main():
     st.set_page_config(layout="wide")
     if "mapper" not in st.session_state:
         st.session_state.counter = False
+     if "create_mapper" not in st.session_state:
+        st.session_state.create_mapper = False
     st.write("Excel File Mapper")
     # Step 1: Upload QUELLE and ZIEL files
     st.write("")
