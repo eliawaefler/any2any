@@ -19,6 +19,8 @@ def main():
     st.set_page_config(layout="wide")
     if "mapper" not in st.session_state:
         st.session_state.counter = False
+     if "create_mapper" not in st.session_state:
+        st.session_state.create_mapper = False
     st.write("Excel File Mapper")
     # Step 1: Upload QUELLE and ZIEL files
     st.write("")
@@ -33,12 +35,7 @@ def main():
     with c3:
         uploaded_ziel = st.file_uploader("Upload ZIEL Excel File", type="xlsx", key="ziel")
 
-    if uploaded_quelle and uploaded_ziel:
-        # Extract sheet names and column headers
-        st.write("")
-        st.write("")
-        st.write("")
-        if st.button("New Mapping Table"):
+     if st.button("New Mapping Table"):
             st.write("Select Mappings")
             quelle_structure = extract_file_structure(uploaded_quelle)
             ziel_structure = extract_file_structure(uploaded_ziel)
@@ -157,5 +154,6 @@ def main():
                     "text/csv",
                     key="download_ziel_csv"
                 )
+       
 if __name__ == "__main__":
     main()
