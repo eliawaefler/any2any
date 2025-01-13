@@ -1,0 +1,3 @@
+Quelle_File,Quelle_Sheet,Quelle_Column,Transformation_Rule,Ziel_File,Ziel_Sheet,Ziel_Column
+test_QUELLE.xlsx,meine_räume,Name,1:1,standardtabelle.xlsx,Tabelle1,ID
+test_QUELLE.xlsx,meine_räume,Fläche,1:1,standardtabelle.xlsx,Tabelle1,ID

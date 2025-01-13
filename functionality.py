@@ -3,6 +3,8 @@
 hier kommen funktionen, die von der ANWENUNG aufgerufen werden.
 """
 
+import pandas as pd
+
 # Function to extract sheet names and column headers from an uploaded Excel file
 def extract_file_structure(uploaded_file):
     structure = {}
