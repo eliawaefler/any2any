@@ -1,96 +1,163 @@
-import streamlit as st
-import pandas as pd
-import hashlib
+import os
 import json
+import uuid
+import hashlib
+import pandas as pd
+import time
 
-"""
-// TODO: salt for PW
-"""
+import streamlit
+import streamlit as st
 
-# Pfad zur JSON-Datenbank
-DATABASE_PATH = 'database/users.json'
+import neon
 
+# Constants
+LOCAL_DATABASE_PATH = "users.json"
+NEON = True  # Replace with actual logic to determine NEON usage
+CONN = os.environ["NEON_URL_any"]
 
-def load_users():
-    try:
-        with open(DATABASE_PATH, 'r') as file:
-            return pd.DataFrame(json.load(file)['users'])
-    except (FileNotFoundError, json.JSONDecodeError):
-        return pd.DataFrame(columns=['guid', 'username', 'email', 'pw_hash', 'first_name', 'last_name'])
-
-
-def save_users(users_db):
-    with open(DATABASE_PATH, 'w') as file:
-        json.dump({"users": users_db.to_dict('records')}, file)
-
-
+# Helper Functions
 def hash_password(password):
     return hashlib.md5(password.encode()).hexdigest()
 
+def generate_salt():
+    return hash_password(str(time.time()))
 
-def verify_user(email, password):
-    users_db = load_users()
-    user = users_db[users_db['email'] == email]
-    if not user.empty and user.iloc[0]['pw_hash'] == hash_password(password):
-        return True, user.iloc[0]['username']
-    return False, ""
 
+
+# Local Database Functions
+def load_users_locally():
+    """Load users from the local JSON file."""
+    try:
+        with open(LOCAL_DATABASE_PATH, 'r') as file:
+            data = json.load(file)
+            return pd.DataFrame(data.get('users', []))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return pd.DataFrame(columns=['guid', 'username', 'email', 'pw_hash', 'first_name', 'last_name', 'salt'])
+
+def save_users_locally(users_db):
+    """Save users to the local JSON file."""
+    with open(LOCAL_DATABASE_PATH, 'w') as file:
+        json.dump({"users": users_db.to_dict('records')}, file, indent=4)
+
+# User Management Functions
+def load_users():
+    """Load users depending on the environment."""
+    if NEON:
+        neon_users = neon.read_db(CONN, "users")
+        users = pd.DataFrame([
+            {"guid": u[0], "username": u[1], "email": u[2], "pw_hash": u[3], "first_name": u[4], "last_name": u[5],
+             "salt": u[6]} for u in neon_users])
+        return users
+    else:
+        return load_users_locally()
+
+def save_user(new_user):
+    """Save users depending on the environment."""
+    if NEON:
+        neon.write_to_db(CONN, "users", new_user)
+    else:
+        old_users = load_users()
+        updated_db = pd.concat([old_users, pd.DataFrame([new_user])], ignore_index=True)
+        save_users_locally(updated_db)
 
 def register_user(username, email, password, first_name, last_name):
+    """Register a new user."""
     users_db = load_users()
-    if email not in users_db['email'].values:
-        new_user = {'guid': 'new-guid', 'username': username, 'email': email, 'pw_hash': hash_password(password),
-                    'first_name': first_name, 'last_name': last_name}
-        updated_db = users_db.append(new_user, ignore_index=True)
-        save_users(updated_db)
-        return True
-    return False
 
+    if email in users_db['email'].values:
+        return False  # Email already exists
 
-def main():
-    st.title("Willkommen zur Anmeldung")
-    menu = ["Home", "Login", "Sign Up", "Passwort vergessen"]
-    choice = st.sidebar.selectbox("Menü", menu)
+    salt = generate_salt()
+    new_user = {
+        'guid': str(uuid.uuid4()),
+        'username': username,
+        'email': email,
+        'pw_hash': hash_password(f"{salt}_{password}_{username}"),
+        'first_name': first_name,
+        'last_name': last_name,
+        'salt': salt
+    }
 
-    if choice == "Home":
-        st.subheader("Home Bereich")
+    save_user(new_user)
+    return True
 
-    elif choice == "Login":
-        st.subheader("Login Bereich")
-        email = st.text_input("Email")
-        password = st.text_input("Passwort", type='password')
-        if st.button("Login"):
+def verify_user(email_or_username, password_given):
+    """Verify user credentials."""
+    users_db = load_users()
+    user = users_db[(users_db['email'] == email_or_username) | (users_db['username'] == email_or_username)]
+
+    if not user.empty:
+        user = user.iloc[0]
+        expected_hash = hash_password(f"{user['salt']}_{password_given}_{user['username']}")
+        if user['pw_hash'] == expected_hash:
+            return [True, user['username']]
+
+    return [False, ""]
+
+# Streamlit Interface
+def display_login():
+    """Display the login interface."""
+
+    st.subheader("Login")
+    email = st.text_input("Email")
+    password = st.text_input("Passwort", type='password')
+
+    if st.button("Login"):
+        if email and password:
             authenticated, username = verify_user(email, password)
             if authenticated:
-                st.success(f"Eingeloggt als {username}")
+                return username
             else:
                 st.warning("Ungültige Email/Passwort Kombination")
+        else:
+            st.warning("Bitte alle Felder ausfüllen.")
 
-    elif choice == "Sign Up":
-        st.subheader("Registrieren Sie sich")
-        new_user_username = st.text_input("Benutzername")
-        new_user_email = st.text_input("Email")
-        new_user_password = st.text_input("Passwort", type='password')
-        new_user_first_name = st.text_input("Vorname")
-        new_user_last_name = st.text_input("Nachname")
+def display_signup():
+    """Display the signup interface."""
+    st.subheader("Registrieren Sie sich")
 
-        if st.button("Registrieren"):
-            if register_user(new_user_username, new_user_email, new_user_password, new_user_first_name,
-                             new_user_last_name):
-                st.success(f"Konto für {new_user_email} wurde erfolgreich erstellt!")
+    username = st.text_input("Benutzername")
+    email = st.text_input("Email")
+    password = st.text_input("Passwort", type='password')
+    first_name = st.text_input("Vorname")
+    last_name = st.text_input("Nachname")
+
+    if st.button("Registrieren"):
+        if username and email and password and first_name and last_name:
+            if register_user(username, email, password, first_name, last_name):
+                st.success(f"Konto für {email} wurde erfolgreich erstellt!")
             else:
                 st.error("Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.")
+        else:
+            st.warning("Bitte alle Felder ausfüllen.")
 
-    elif choice == "Passwort vergessen":
-        st.subheader("Passwort zurücksetzen")
-        email = st.text_input("Bitte geben Sie Ihre E-Mail-Adresse ein, um Ihr Passwort zurückzusetzen.")
-        if st.button("Passwort zurücksetzen"):
-            users_db = load_users()
-            if email in users_db['email'].values:
-                st.success("Ein Link zum Zurücksetzen Ihres Passworts wurde an Ihre E-Mail gesendet.")
-            else:
-                st.error("Diese E-Mail-Adresse wurde nicht gefunden.")
+def display_forgot_pw():
+    """Display the password reset interface."""
+    st.subheader("Passwort zurücksetzen")
 
+    email = st.text_input("Bitte geben Sie Ihre E-Mail-Adresse ein, um Ihr Passwort zurückzusetzen.")
 
-if __name__ == '__main__':
-    main()
+    if st.button("Passwort zurücksetzen"):
+        users_db = load_users()
+
+        if email in users_db['email'].values:
+            st.success("Ein Link zum Zurücksetzen Ihres Passworts wurde an Ihre E-Mail gesendet.")
+            st.warning("Funktioniert noch nicht.")
+        else:
+            st.error("Diese E-Mail-Adresse wurde nicht gefunden.")
+
+# Entry Point
+def main_local():
+    """Main function to display the interface."""
+    option = st.sidebar.selectbox("Navigation", ["Login", "Signup", "Passwort vergessen"])
+
+    if option == "Login":
+        display_login()
+    elif option == "Signup":
+        display_signup()
+    elif option == "Passwort vergessen":
+        display_forgot_pw()
+
+if __name__ == "__main__":
+
+    main_local()
