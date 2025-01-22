@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import streamlit as st
 import pandas as pd
@@ -36,38 +37,30 @@ def display_welcome():
                             bla bla
                             """)
 
-def display_loginpage__():
-    """
-    st.title("LOGINPAGE")
-    sst.username = st.text_input("choose username: ")
-    sst.user_pw = st.text_input("choose username: ")
-    if sst.username:
-        sst.user_logged_in = True
-        sst.page = "user_home"
-        st.rerun()
-    """
-    pass
-
 
 def display_user_fdm():
-    st.write("Step 1: Upload Excel Files")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        sst.uploaded_quelle = st.file_uploader("Upload QUELLE Excel File", type="xlsx", key="quelle")
-    with c2:
-        sst.uploaded_mapping_table = st.file_uploader("upload mapper table", type="csv", key="mapping_table")
-    with c3:
-        sst.uploaded_ziel = st.file_uploader("Upload ZIEL Excel File", type="xlsx", key="ziel")
+    st.subheader("MY FDM")
 
 def extract_file_structure(file):
     return []
 
 def display_new_mapper():
+    st.subheader("NEW MAPPER")
     rules = [] # TEMP
     rule_infos = [] # TEMP
     uploaded_quelle = [] # TEMP
     uploaded_ziel = [] # TEMP
     st.write("Mapping")
+    if "create_mapper" not in sst:
+        sst["create_mapper"] = False
+    if "map_q" not in sst:
+        sst["map_q"] = False
+    if "map_z" not in sst:
+        sst["map_z"] = False
+    if "uploaded_quelle" not in sst:
+        sst["uploaded_quelle"] = False
+    if "uploaded_ziel" not in sst:
+        sst["uploaded_ziel"] = False
     if st.button("New Mapping Table"):
         if sst.uploaded_quelle and sst.uploaded_ziel:
             sst.create_mapper = True
@@ -164,10 +157,10 @@ def display_new_mapper():
             )
 
 def display_execute():
+    st.subheader("EXECUTE")
     uploaded_mapping_table = []  # TEMP
     uploaded_quelle = []  # TEMP
     uploaded_ziel = []  # TEMP
-
 
     ziel_preview = []
 
@@ -226,6 +219,10 @@ def main():
     if "page" not in sst:
         sst.page = "welcome"
 
+    st.write(f"login: {sst.user_logged_in}")
+    st.write(f"username: {sst.username}")
+    st.write(f"page: {sst.page}")
+
     a, b, c = st.columns([15, 1, 1])
     if sst.user_logged_in:
         with a:
@@ -233,7 +230,6 @@ def main():
             st.title(f"")
         with b:
             if st.button("home"):
-                sst.user_logged_in = False
                 sst.page = "user_home"
                 st.rerun()
         with c:
@@ -242,19 +238,27 @@ def main():
                 sst.page = "home"
                 st.rerun()
         if sst.page == "user_home":
-            a, b, c = st.columns(3)
+            a, b, c, d = st.columns(4)
             with a:
                 if st.button("My FDM"):
-                    st.page = "user_fdm"
+                    sst.page = "user_fdm"
                     st.rerun()
             with b:
                 if st.button("Create Mapper"):
-                    st.page = "user_create_mapper"
+                    sst.page = "user_create_mapper"
                     st.rerun()
             with c:
                 if st.button("execute transformation"):
-                    st.page = "user_execute"
+                    sst.page = "user_execute"
                     st.rerun()
+            with d:
+                new_file = st.file_uploader("upload new file")
+                if new_file:
+                    new_file_type = st.selectbox(["mapper", "Quelle Ziel", "Transferdaten"])
+                    st.write(new_file_type)
+                    if new_file_type:
+                        if st.button("add to my FDM"):
+                            neon.create_table(CONN, f"{sst.username}_{new_file}")
         elif sst.page == "user_fdm":
             display_user_fdm()
         elif sst.page == "user_create_mapper":
@@ -300,5 +304,7 @@ def main():
             display_welcome()
 
 if __name__ == "__main__":
+    #CONN = os.environ["NEON_KEY"]
+    CONN = os.environ["NEON_URL_any"]
     sst = st.session_state
     main()
