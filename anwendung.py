@@ -56,21 +56,23 @@ def display_user_fdm():
     ziele = neon.read_db(CONN, f"{sst.username}_ziel")
     if len(quellen) == 0:
         st.subheader("")
-        st.subheader("starte mit dem Upload einer QUELLDATEI.   -->>")
+        st.subheader("starte mit dem Upload einer QUELLDATEI. :potable_water:  -->>")
     elif len(ziele) == 0:
         st.subheader("")
-        st.subheader("lade eine ZIELDATEI hoch                  -->>")
+        st.subheader("lade eine ZIELDATEI hoch    :dart:              -->>")
     elif len(mappers) == 0:
-        st.subheader("erstelle Deinen ersten MAPPER             -->>")
+        st.subheader("erstelle Deinen ersten MAPPER  :twisted_rightwards_arrows:          -->>")
     else:
         with quell:
+            st.subheader(":potable_water:")
             for q in quellen:
                 st.write(q[3])
         with map:
-
+            st.subheader(":twisted_rightwards_arrows:")
             for m in mappers:
                 st.write(m[1])
         with ziel:
+            st.subheader(":dart:")
             for z in ziele:
                 st.write(z[3])
 def display_user_new_file():
@@ -97,7 +99,7 @@ def display_user_new_file():
                     else:
                         for entity, attributes in entities.items():
                             json_attributes = json.dumps(attributes)
-                            data = { 'guid': str(uuid.uuid4()),
+                            data = {"guid": str(uuid.uuid4()),
                                     "api": "na",
                                     "file_name": new_file.name,
                                     "entity_name": str(entity),
@@ -106,8 +108,7 @@ def display_user_new_file():
                             if neon.write_to_db(CONN, f"{sst.username}_{new_file_type}", data) != "success":
                                 st.error(f"could not add {new_file_type}")
                                 st.rerun()
-                        st.success(f"{new_file_type} hinzugefügt")
-                        st.rerun()
+                st.rerun()
 
         elif new_file_type == "Transferdaten":
             # add logic to select
@@ -245,7 +246,6 @@ def display_user_new_mapper():
                     "Ziel_Sheet": ziel_entity,
                     "Ziel_Column": no_sst_ziel_col[n],
                 })
-            st.write(sst.mapping_table)
             data = {"guid": str(uuid.uuid4()),
                     "name": sst.mapper_name,
                     "data": str(sst.mapping_table)}
