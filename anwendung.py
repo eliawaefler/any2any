@@ -188,16 +188,18 @@ def display_user_new_mapper():
             sst.new_mapper = True
     with add_c2:
         a, l, r = st.columns([1, 1, 2])
+
+        if st.button("add row"):
+            sst.rows += 1
+            # sst.sel_quell_col.append(None)
+            # sst.sel_ziel_col.append(None)
+            # sst.sel_rule.append(None)
+            # sst.sel_rule_p.append(None)
         with l:
             st.subheader("")
             st.subheader(":twisted_rightwards_arrows:")
 
-            if st.button("add row"):
-                sst.rows += 1
-                # sst.sel_quell_col.append(None)
-                # sst.sel_ziel_col.append(None)
-                # sst.sel_rule.append(None)
-                # sst.sel_rule_p.append(None)
+
         with r:
             sst.mapper_name = st.text_input("mapper name: ")
 
