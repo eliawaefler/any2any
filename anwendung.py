@@ -121,6 +121,7 @@ def display_user_new_mapper():
     rules = neon.read_db(CONN, "rules")
     rule_names = [r[1] for r in rules]
     rule_infos = [r[2] for r in rules]
+    rule_param_type = [r[3] for r in rules]
 
     quellen = neon.read_db(CONN, f"{sst.username}_Quelle")
     quell_namen = [q[3] for q in quellen]
@@ -130,11 +131,13 @@ def display_user_new_mapper():
     if st.toggle("show rule information"):
         st.subheader("Rule Information")
         for rule_n in range(len(rules)):
-            l, r = st.columns(2)
+            l, r, gr = st.columns([1, 4, 2])
             with l:
-                st.write(rules[rule_n])
+                st.write(rule_names[rule_n])
             with r:
                 st.write(rule_infos[rule_n])
+            with gr:
+                st.write(f"param Type HINT: {rule_param_type[rule_n]}")
 
     add_c1, add_c2, add_c3 = st.columns(3)
     with add_c1:
