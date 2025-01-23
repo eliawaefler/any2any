@@ -174,36 +174,44 @@ def display_user_new_mapper():
     add_c1, add_c2, add_c3 = st.columns(3)
     with add_c1:
         quell_entity = st.selectbox("Quelle", quell_namen)
+        if st.button("create new mapper table"):
+            reset_sst()
+            sst.mapping_table = []
+            sst.quell_cols = quellen[quell_namen.index(quell_entity)][4]
+            sst.ziel_cols = ziele[ziel_namen.index(ziel_entity)][4]
+            sst.rows = len(sst.quell_cols)
 
+            # sst.sel_quell_col = [None for _ in range(sst.rows)]
+            # sst.sel_ziel_col = [None for _ in range(sst.rows)]
+            # sst.sel_rule = [None for _ in range(sst.rows)]
+            # sst.sel_rule_p = [None for _ in range(sst.rows)]
+            sst.new_mapper = True
     with add_c2:
         a, l, r = st.columns([1, 1, 2])
         with l:
             st.subheader("")
             st.subheader(":twisted_rightwards_arrows:")
+
+            if st.button("add row"):
+                sst.rows += 1
+                # sst.sel_quell_col.append(None)
+                # sst.sel_ziel_col.append(None)
+                # sst.sel_rule.append(None)
+                # sst.sel_rule_p.append(None)
         with r:
             sst.mapper_name = st.text_input("mapper name: ")
+
+            if st.button("remove row"):
+                sst.rows += -1
+                # sst.sel_quell_col.append(None)
+                # sst.sel_ziel_col.append(None)
+                # sst.sel_rule.append(None)
+                # sst.sel_rule_p.append(None)
     with add_c3:
         ziel_entity = st.selectbox("Ziel", ziel_namen)
 
-    if st.button("create new mapper table"):
-        reset_sst()
-        sst.mapping_table = []
-        sst.quell_cols = quellen[quell_namen.index(quell_entity)][4]
-        sst.ziel_cols = ziele[ziel_namen.index(ziel_entity)][4]
-        sst.rows = len(sst.quell_cols)
 
-        #sst.sel_quell_col = [None for _ in range(sst.rows)]
-        #sst.sel_ziel_col = [None for _ in range(sst.rows)]
-        #sst.sel_rule = [None for _ in range(sst.rows)]
-        #sst.sel_rule_p = [None for _ in range(sst.rows)]
-        sst.new_mapper = True
 
-    if st.button("add row"):
-        sst.rows += 1
-        #sst.sel_quell_col.append(None)
-        #sst.sel_ziel_col.append(None)
-        #sst.sel_rule.append(None)
-        #sst.sel_rule_p.append(None)
 
     if sst.new_mapper:
         no_sst_quell_col = [None for _ in range(sst.rows)]
