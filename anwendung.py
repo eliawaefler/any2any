@@ -51,15 +51,28 @@ def display_welcome():
 def display_user_fdm():
     st.subheader("MY FDM")
     quell, map, ziel = st.columns(3)
-    with quell:
-        for q in neon.read_db(CONN, f"{sst.username}_quelle"):
-            st.write(q[3])
-    with map:
-        for m in neon.read_db(CONN, f"{sst.username}_mapper"):
-            st.write(m[1])
-    with ziel:
-        for z in neon.read_db(CONN, f"{sst.username}_ziel"):
-            st.write(z[3])
+    quellen = neon.read_db(CONN, f"{sst.username}_quelle")
+    mappers = neon.read_db(CONN, f"{sst.username}_mapper")
+    ziele = neon.read_db(CONN, f"{sst.username}_ziel")
+    if len(quellen) == 0:
+        st.subheader("")
+        st.subheader("starte mit dem Upload einer QUELLDATEI.   -->>")
+    elif len(ziele) == 0:
+        st.subheader("")
+        st.subheader("lade eine ZIELDATEI hoch                  -->>")
+    elif len(mappers) == 0:
+        st.subheader("erstelle Deinen ersten MAPPER             -->>")
+    else:
+        with quell:
+            for q in quellen:
+                st.write(q[3])
+        with map:
+
+            for m in mappers:
+                st.write(m[1])
+        with ziel:
+            for z in ziele:
+                st.write(z[3])
 def display_user_new_file():
     new_file = st.file_uploader("upload new file")
     if new_file:
