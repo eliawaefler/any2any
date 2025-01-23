@@ -74,8 +74,21 @@ def execute_mapper_transformation(data, mapper):
         if transformation_rule == '1:1':
             ziel_df[ziel_column] = source_df[quelle_column]
         elif transformation_rule == 'multiply':
-            multiplier = float(transformation_param)
-            ziel_df[ziel_column] = source_df[quelle_column] * multiplier
+            ziel_df[ziel_column] = source_df[quelle_column] * float(transformation_param)
+        elif transformation_rule == "cut_left":
+            ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
+        elif transformation_rule == "cut_sep_right":
+            # LINKS RECHTS LOGIK FEHLT
+            ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
+        elif transformation_rule == "cut_sep_left":
+            ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
+        elif transformation_rule == "cut_right":
+            ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
+        elif transformation_rule == "concat":
+            order = [int(i) for i in transformation_param.split(",")]
+            ziel_df[ziel_column] = source_df.iloc[:, order].apply(lambda x: "".join(x.astype(str)), axis=1)
+        elif transformation_rule == "add":
+            ziel_df[ziel_column] = source_df[quelle_column] + float(transformation_param)
 
     st.subheader("ZIEL Preview")
     st.dataframe(ziel_df)
@@ -171,27 +184,7 @@ if __name__ == "__main__":
 
 
 def other_rules():
-    elif rule == "cut_left":
-        sep = rule_param
-        #LOGIK FEHLT
-        #ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
-    elif rule == "cut_sep_right":
-        # LINKS RECHTS LOGIK FEHLT
-        sep = rule_param
-        ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
-    elif rule == "cut_sep_left":
-        sep = rule_param
-        ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
-    elif rule == "cut_right":
-        sep = rule_param
-        #ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
-    elif rule == "concat":
-        order = [int(i) for i in rule_param.split(",")]
-        ziel_df[ziel_column] = quelle_df.iloc[:, order].apply(lambda x: "".join(x.astype(str)), axis=1)
-    elif rule == "multiply":
-        ziel_df[ziel_column] = quelle_df[quelle_column] * float(rule_param)
-    elif rule == "add":
-        ziel_df[ziel_column] = quelle_df[quelle_column] + float(rule_param)
+   
 
 
 """
