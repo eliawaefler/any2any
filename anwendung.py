@@ -45,7 +45,7 @@ def display_user_fdm():
             st.write(q[3])
     with map:
         for m in neon.read_db(CONN, f"{sst.username}_Mapper"):
-            st.write(m)
+            st.write(m[1])
     with ziel:
         for z in neon.read_db(CONN, f"{sst.username}_Ziel"):
             st.write(z[3])
