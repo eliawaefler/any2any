@@ -17,15 +17,16 @@ def display_welcome():
     with left:
         st.markdown("""
                             ###   Das Problem
-                            bla bla     
+                            Die Welt ist voller Daten, aber oft sind diese unstrukturiert, schwer zugänglich oder in Formaten, die nicht kompatibel sind. Unternehmen kämpfen mit ineffizienten Prozessen, Daten-Silos und der mangelnden Fähigkeit, Informationen effektiv zu nutzen. Dies führt zu verpassten Chancen, unnötigen Kosten und langsamer Entscheidungsfindung.    
                     """)
         st.markdown("""
                             ###   Unsere Lösung
-                            bla bla
+                            Mit any2any revolutionieren wir die Art und Weise, wie Daten transformiert und genutzt werden. Unsere Plattform vereinfacht komplexe Datenumwandlungen, ermöglicht nahtlose Integration und schafft ein Ökosystem, in dem Datenflüsse effizienter und transparenter werden. Ob Excel zu JSON, BIM-Daten zu FM-Systemen oder benutzerdefinierte Transformationen – any2any bietet die Werkzeuge, die Sie brauchen, um Daten sinnvoll und gewinnbringend einzusetzen.
                     """)
         st.markdown("""
                             ###   Treten Sie unserer Bewegung bei
-                            bla bla                        
+                            Schließen Sie sich der any2any-Community an und werden Sie Teil einer Datenrevolution. Gemeinsam gestalten wir eine Zukunft, in der Daten nicht mehr im Weg stehen, sondern den Weg ebnen – für Innovation, Wachstum und Erfolg. Starten Sie heute und erleben Sie die Power von grenzenloser Datenflexibilität.
+                   
                             """)
         if st.button("Registrieren"):
             sst.page = "sign-up"
@@ -34,7 +35,17 @@ def display_welcome():
     with right:
         st.markdown("""
                             ###   Wie es funktioniert
-                            bla bla
+                            1. Datenquelle hochladen
+                            Laden Sie Ihre Daten in jedem beliebigen Format hoch – von CSVs und Tabellen bis hin zu komplexen BIM-Modellen oder APIs.
+
+                            2. Transformation definieren
+                            Nutzen Sie unsere benutzerfreundliche Oberfläche, um Regeln und Transformationen festzulegen, oder lassen Sie unsere KI den besten Ansatz für Sie finden.
+
+                            3. Nahtlose Ausgabe
+                            Exportieren Sie Ihre Daten in das gewünschte Format, bereit für den nächsten Schritt – ob Integration, Analyse oder direkte Anwendung.
+
+                            4. Wiederholbar und skalierbar
+                            Speichern Sie Ihre Workflows, um Datenprozesse zu automatisieren und skalierbar zu machen.
                             """)
 
 def display_user_fdm():
@@ -348,7 +359,7 @@ def innit_st_page(debug=False):
             st.write(f"sel_rule: {str(sst.sel_rule)[:20]}")
             st.write(f"sel_rule_p: {str(sst.sel_rule_p)[:20]}")
 def main():
-    innit_st_page(debug=True)
+    innit_st_page(debug=False)
     hauptbereich, rechts, ganz_rechts = st.columns([12, 2, 2])
     if sst.user_logged_in:
         with hauptbereich:
