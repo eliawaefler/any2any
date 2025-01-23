@@ -176,8 +176,6 @@ def test_create_tables():
         "salt": "VARCHAR(255) NOT NULL",  # Salt for password hashing (required)
         "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
     }
-
-    """
     table_name = "rules"
     columns = {
         "guid": "UUID PRIMARY KEY",  # Unique identifier
@@ -186,6 +184,15 @@ def test_create_tables():
         "rule_param_type": "VARCHAR(1000)",
         "created_by": "VARCHAR(100)",
         "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+    }
+
+
+    """
+    table_name = "eliaw_mapper"
+    columns = {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "name": "VARCHAR(1000)",
+        "data": "VARCHAR(1000000)"
     }
 
     print(create_table(connection_string, table_name, columns))
@@ -203,7 +210,7 @@ def test_write():
     }
     write_to_db(connection_string, "users", new_user)
 
-    """
+
     one2one = {
         "guid": str(uuid.uuid4()),
         "rule_name": "cut",
@@ -227,6 +234,8 @@ def test_write():
     }
     for new_rule in [one2one, cut_left, cut_right]:
         write_to_db(connection_string, "rules", new_rule)
+    """
+
 
 if __name__ == "__main__":
     #CONN_STRING = os.environ["NEON_KEY"] # streamlit secret

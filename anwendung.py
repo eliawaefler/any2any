@@ -137,7 +137,7 @@ def display_user_new_mapper():
             with r:
                 st.write(rule_infos[rule_n])
             with gr:
-                st.write(f"param Type HINT: {rule_param_type[rule_n]}")
+                st.write(f"Type HINT: {rule_param_type[rule_n]}")
 
     add_c1, add_c2, add_c3 = st.columns(3)
     with add_c1:
@@ -198,7 +198,7 @@ def display_user_new_mapper():
         if st.button("save Mapper"):
             data = {"guid": str(uuid.uuid4()),
                     "name": sst.mapper_name,
-                    "data": sst.mapping_table}
+                    "data": str(sst.mapping_table)}
             if neon.write_to_db(CONN, f"{sst.username}_mapper", data) == "success":
                 st.success("mapper saved")
             else:
