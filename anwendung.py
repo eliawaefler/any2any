@@ -119,8 +119,8 @@ def display_user_new_mapper():
 
     st.subheader("NEW MAPPER")
     rules = neon.read_db(CONN, "rules")
-    rule_names = [r[2] for r in rules]
-    rule_infos = [r[3] for r in rules]
+    rule_names = [r[1] for r in rules]
+    rule_infos = [r[2] for r in rules]
 
     quellen = neon.read_db(CONN, f"{sst.username}_Quelle")
     quell_namen = [q[3] for q in quellen]
