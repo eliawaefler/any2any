@@ -4,7 +4,7 @@ from openpyxl import load_workbook
 
 
 # Function to extract entity names and attribute names
-def extract_entity_attributes(file):
+def extract_entity_attributes(file, structure="other"):
     entity_details = {}
 
     if file.name.endswith('.csv'):
@@ -23,8 +23,14 @@ def extract_entity_attributes(file):
             if sheet_data.empty:
                 continue
 
-            # Check if there's a clear header (row 1)
-            headers = sheet_data.iloc[0].dropna().tolist()
+            headers = False
+            if structure == "other":
+                # Check if there's a clear header (row 1)
+                headers = sheet_data.iloc[0].dropna().tolist()
+            elif structure == "row0":
+                headers = sheet_data.iloc[0].dropna().tolist()
+            elif structure == "row1":
+                headers = sheet_data.iloc[1].dropna().tolist()
             if headers:
                 entity_details[sheet] = headers
             else:

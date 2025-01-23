@@ -63,9 +63,10 @@ def display_user_new_file():
                 else:
                     st.error("could not add mapper")
         elif new_file_type in ["Quelle", "Ziel"]:
+            data_stucture = st.selectbox("data structure", ["row0", "row1", "A and row0", "A and row1", "other"])
             if st.button("add to my FDM"):
                 with st.spinner("Processing file..."):
-                    entities = data_handling.extract_entity_attributes(new_file)
+                    entities = data_handling.extract_entity_attributes(new_file, data_stucture)
                     if not entities:
                         st.error(f"could not add {new_file_type}")
                         st.rerun()
@@ -159,7 +160,7 @@ def display_user_new_mapper():
         sst.quell_cols = quellen[quell_namen.index(quell_entity)][4]
         sst.ziel_cols = ziele[ziel_namen.index(ziel_entity)][4]
         sst.new_mapper = True
-
+    st.write(sst.quell_cols)
     if sst.new_mapper:
         for column in sst.quell_cols:
             col1, col2, col3 = st.columns(3)
@@ -257,9 +258,9 @@ def display_user_execute():
 def main():
     st.set_page_config(
         page_title="any2any",  #:cyclone::hammer_and_pick::recycle:
-        page_icon=":twisted_rightwards_arrows:",
+        page_icon=":twisted_rightwards_arrows:",  # quelle: :potable_water:, ziel: :dart:
         # You can use emojis or path to an image file :repeat: oder :cyclone: :radio_button: :recycle: :hammer_and_pick:
-        layout="centered"  # 'centered' or 'wide'
+        layout="centered"  # 'centered' or 'wide' :scissors: :arrow_left: :arrow_right:
     )
     if "user_logged_in" not in sst:
         sst.user_logged_in = False

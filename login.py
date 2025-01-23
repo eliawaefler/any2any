@@ -121,12 +121,9 @@ def display_signup():
         if username and email and password and first_name and last_name:
             if register_user(username, email, password, first_name, last_name):
                 neon.create_table(CONN, f"{username}_Mapper", {
-                                    "guid": "UUID PRIMARY KEY",  # Unique identifier
-                                    "API": "VARCHAR(255) NOT NULL",
-                                    "file_name": "VARCHAR(255) NOT NULL",
-                                    "entity_name": "VARCHAR(255) NOT NULL",
-                                    "entity_attributes": "JSONB NOT NULL",
-                                    "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+                                        "guid": "UUID PRIMARY KEY",  # Unique identifier
+                                        "name": "VARCHAR(1000)",
+                                        "data": "VARCHAR(1000000)"
                                     })
                 neon.create_table(CONN, f"{username}_Quelle", {
                                     "guid": "UUID PRIMARY KEY",  # Unique identifier
@@ -149,6 +146,11 @@ def display_signup():
                                     "entity_name": "VARCHAR(255) NOT NULL",  #
                                     "attributes": "JSONB NOT NULL",
                                     "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+                                    })
+                neon.write_to_db(CONN, f"{username}_FDM", {
+                                    "guid": str(uuid.uuid4()),  # Unique identifier
+                                    "entity_name": "1",
+                                    "entity_attributes": [],
                                     })
                 st.success(f"Konto für {email} wurde erfolgreich erstellt!")
 

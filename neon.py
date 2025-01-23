@@ -188,7 +188,7 @@ def test_create_tables():
 
 
     """
-    table_name = "eliaw_mapper"
+    table_name = "elu_mapper"
     columns = {
         "guid": "UUID PRIMARY KEY",  # Unique identifier
         "name": "VARCHAR(1000)",
@@ -242,10 +242,9 @@ if __name__ == "__main__":
     connection_string = os.environ["NEON_URL_any"] # for local
 
 
-    # to reset users tables:
-    #dropped = drop_tables_with_pattern(connection_string, pattern="_")
-    #print(f"Dropped tables: {dropped}")
-    test_create_tables()
-    test_write()
+
+    print(f"Dropped tables: {drop_tables_with_pattern(connection_string, pattern="_")}")     # to reset users tables
+    #test_create_tables()
+    #test_write()
     #users_db = read_db(connection_string, "users", printout=False)
     #print(users_db)
