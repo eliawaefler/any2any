@@ -64,7 +64,7 @@ def display_user_new_file():
                     st.error("could not add mapper")
         elif new_file_type in ["Quelle", "Ziel"]:
             if st.button("add to my FDM"):
-                with st.spinner("Processing fisle..."):
+                with st.spinner("Processing file..."):
                     entities = data_handling.extract_entity_attributes(new_file)
                     if not entities:
                         st.error(f"could not add {new_file_type}")
@@ -168,7 +168,7 @@ def display_user_new_mapper():
                 with l:
                     my_rule = st.selectbox(
                         f"Select Rule",
-                        rules,
+                        rule_names,
                         key=f"rule_{quell_entity}_{column}"
                     )
                 with r:

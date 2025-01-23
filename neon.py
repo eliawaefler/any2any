@@ -164,6 +164,7 @@ def read_db(connection_string, table, condition='1=1', printout=False):
 
 def test_create_tables():
 
+    """
     table_name = "users"
     columns = {
         "guid": "UUID PRIMARY KEY",  # Unique identifier
@@ -179,16 +180,18 @@ def test_create_tables():
     """
     table_name = "rules"
     columns = {
-        "guid": "SERIAL PRIMARY KEY",  # Unique identifier
-        "rule": "VARCHAR(1000)", # the rule to execute (NAME)
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "rule_name": "VARCHAR(1000)", # the rule to execute (NAME)
         "rule_info": "VARCHAR(1000)",
+        "rule_param_type": "VARCHAR(1000)",
         "created_by": "VARCHAR(100)",
         "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
     }
-    """
+
     print(create_table(connection_string, table_name, columns))
 
 def test_write():
+    """
     new_user = {
         "guid": str(uuid.uuid4()),
         "username": "e2",
@@ -200,6 +203,30 @@ def test_write():
     }
     write_to_db(connection_string, "users", new_user)
 
+    """
+    one2one = {
+        "guid": str(uuid.uuid4()),
+        "rule_name": "cut",
+        "rule_info": "direkter übertrag ohne manipulation",
+        "rule_param_type": "none",
+        "created_by": "Elia"
+    }
+    cut_left = {
+        "guid": str(uuid.uuid4()),
+        "rule_name": "cut_left",
+        "rule_info": "das QUELL attribut wird von links (vorne) beschnitten, der rechte (hintere) teil wird behalten",
+        "rule_param_type": "num",
+        "created_by": "Elia"
+    }
+    cut_right = {
+        "guid": str(uuid.uuid4()),
+        "rule_name": "cut_right",
+        "rule_info": "das QUELL attribut wird von rechts (hinten) beschnitten, der linke (vordere) teil wird behalten",
+        "rule_param_type": "num",
+        "created_by": "Elia"
+    }
+    for new_rule in [one2one, cut_left, cut_right]:
+        write_to_db(connection_string, "rules", new_rule)
 
 if __name__ == "__main__":
     #CONN_STRING = os.environ["NEON_KEY"] # streamlit secret
@@ -207,9 +234,9 @@ if __name__ == "__main__":
 
 
     # to reset users tables:
-    dropped = drop_tables_with_pattern(connection_string, pattern="_")
-    print(f"Dropped tables: {dropped}")
-    #test_create_tables()
-    #test_write()
+    #dropped = drop_tables_with_pattern(connection_string, pattern="_")
+    #print(f"Dropped tables: {dropped}")
+    test_create_tables()
+    test_write()
     #users_db = read_db(connection_string, "users", printout=False)
     #print(users_db)
