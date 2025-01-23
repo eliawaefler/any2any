@@ -43,6 +43,101 @@ def extract_entity_attributes(file, structure="other"):
 
     return entity_details
 
+def execute_gto_transformation(data, mapper, gto):
+    pass
+
+def execute_ziel_transformation(data, mapper, ziel):
+    pass
+
+def execute_mapper_transformation(data, mapper):
+    unique_quell_sheets = []
+    for n in range(len(mapper)):
+        sheetname = mapper[n]["Quelle_Sheet"]
+        if sheetname not in unique_quell_sheets:
+            unique_quell_sheets.append(sheetname)
+    quelle_df = pd.read_excel(data, sheet_name=unique_quell_sheets)
+
+    ziel_df = pd.DataFrame()
+
+    for entry in mapper:
+        quelle_sheet = entry['Quelle_Sheet']
+        quelle_column = entry['Quelle_Column']
+        transformation_rule = entry['Transformation_Rule']
+        transformation_param = entry['Transformation_Rule_param']
+        ziel_sheet = entry['Ziel_Sheet']
+        ziel_column = entry['Ziel_Column']
+
+        # Get the relevant source DataFrame
+        source_df = quelle_df[quelle_sheet]
+
+        # Perform the transformation based on the rule
+        if transformation_rule == '1:1':
+            ziel_df[ziel_column] = source_df[quelle_column]
+        elif transformation_rule == 'multiply':
+            multiplier = float(transformation_param)
+            ziel_df[ziel_column] = source_df[quelle_column] * multiplier
+
+    st.subheader("ZIEL Preview")
+    st.dataframe(ziel_df)
+    # Provide a download option for the transformed ZIEL
+    ziel_csv = ziel_df.to_csv(index=False)
+    st.download_button(
+        "Download Transformed ZIEL",
+        ziel_csv,
+        "transformed_ziel.csv",
+        "text/csv",
+        key="download_ziel_csv"
+    )
+
+
+def execute_transformation_old(data, mapper, ziel):
+    ziel_preview = []
+    ziel_df = pd.DataFrame(columns=ziel)
+
+
+
+    unique_quell_sheets = []
+    for n in range(len(mapper)):
+        sheetname = mapper[n]["Quelle_Sheet"]
+        if sheetname not in unique_quell_sheets:
+            unique_quell_sheets.append(sheetname)
+
+    quelle_df = pd.read_excel(data, sheet_name=unique_quell_sheets)
+    for entity in quelle_df:
+        for record in entity:
+            st.write(record)
+    """
+        quelle = pd.read_excel(data, sheet_name=mapper[row]["Quelle_Sheet"])
+        #quelle_df = pd.read_excel(data, sheet_name=mapper)
+
+    st.write(ziel_df)
+
+    mapping = []
+    quelle_column = mapping["Quelle_Column"]
+    ziel_column = mapping["Ziel_Column"]
+    rule = mapping["Transformation_Rule"]
+    rule_param = mapping["Transformation_Rule_param"]
+
+    if rule == "1:1":
+        ziel_df[ziel_column] = quelle_df[quelle_column]
+
+    ziel_preview.append(ziel_df)
+
+    # Combine and display the preview of ZIEL
+    combined_preview = pd.concat(ziel_preview)
+    st.subheader("ZIEL Preview")
+    st.dataframe(combined_preview)
+
+    # Provide a download option for the transformed ZIEL
+    ziel_csv = combined_preview.to_csv(index=False)
+    st.download_button(
+        "Download Transformed ZIEL",
+        ziel_csv,
+        "transformed_ziel.csv",
+        "text/csv",
+        key="download_ziel_csv"
+    )
+
 
 
 # Streamlit app
@@ -66,142 +161,37 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-
-"""
- AGBs
-
-st.subheader("contact")
-st.write("")
-st.write("main office")
-st.write("ABC str 123")
-st.write("1234 Stadt")
-st.write("")
-st.subheader("AGBs")
-st.write("")
-st.write("by using our plattform you agree to our AGB.")
-st.write("AGB")
-st.write("we will sell your data.")
-st.write("yes, also on the dark web")
-st.write("")>
-
-"""
+    #main()
+    my_mapper = [{'Quelle_Sheet': 'meine_räume', 'Quelle_Column': None, 'Transformation_Rule': None,
+                  'Transformation_Rule_param': None, 'Ziel_Sheet': 'ROOMS', 'Ziel_Column': None},
+                 {'Quelle_Sheet': 'meine_räume', 'Quelle_Column': 'Fläche', 'Transformation_Rule':
+                     'multiply', 'Transformation_Rule_param': '100', 'Ziel_Sheet': 'ROOMS', 'Ziel_Column': 'Bodenfläche'}]
+    print(len(my_mapper))
 
 
-"""
-NOTIZEN
 
-  
-    st.subheader("NEW MAPPER")
-    rules = [] # TEMP
-    rule_infos = [] # TEMP
-    uploaded_quelle = [] # TEMP
-    uploaded_ziel = [] # TEMP
-    st.write("Mapping")
-    
-    if "create_mapper" not in sst:
-        sst["create_mapper"] = False
-    if "map_q" not in sst:
-        sst["map_q"] = False
-    if "map_z" not in sst:
-        sst["map_z"] = False
-    if "uploaded_quelle" not in sst:
-        sst["uploaded_quelle"] = False
-    if "uploaded_ziel" not in sst:
-        sst["uploaded_ziel"] = False
-    if st.button("New Mapping Table"):
-        if sst.uploaded_quelle and sst.uploaded_ziel:
-            sst.create_mapper = True
-        else:
-            st.warning("upload a QUELLE and a ZIEL")
-    if sst.create_mapper:
-        if st.toggle("show rule information"):
-            st.subheader("Rule Information")
-            for rule_n in range(len(rules)):
-                l, r = st.columns(2)
-                with l:
-                    st.write(rules[rule_n])
-                with r:
-                    st.write(rule_infos[rule_n])
+def other_rules():
+    elif rule == "cut_left":
+        sep = rule_param
+        #LOGIK FEHLT
+        #ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
+    elif rule == "cut_sep_right":
+        # LINKS RECHTS LOGIK FEHLT
+        sep = rule_param
+        ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
+    elif rule == "cut_sep_left":
+        sep = rule_param
+        ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
+    elif rule == "cut_right":
+        sep = rule_param
+        #ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
+    elif rule == "concat":
+        order = [int(i) for i in rule_param.split(",")]
+        ziel_df[ziel_column] = quelle_df.iloc[:, order].apply(lambda x: "".join(x.astype(str)), axis=1)
+    elif rule == "multiply":
+        ziel_df[ziel_column] = quelle_df[quelle_column] * float(rule_param)
+    elif rule == "add":
+        ziel_df[ziel_column] = quelle_df[quelle_column] + float(rule_param)
 
-        st.write("CREATE Mappings")
-        quelle_structure = [] #extract_file_structure(uploaded_quelle)
-        ziel_structure = [] #extract_file_structure(uploaded_ziel)
-
-        # Display QUELLE structure on the left and ZIEL mapping options on the right
-        mapping_table = []
-        for sheet, columns in quelle_structure.items():
-            st.write(f"Mapping for Sheet: {sheet}")
-            sst.my_columns = []
-
-            add_c1, add_c2, add_c3, _ = st.columns(4)
-            with add_c1:
-                if st.button("Add Column"):
-                    sst.my_columns.append(
-                        f"{sst.add_col}_{len(sst.my_columns)}")
-            with add_c2:
-                sst.add_col = st.selectbox(
-                    f"Additional Quelle Column",
-                    columns,
-                    key=f"add_quelle_{len(sst.my_columns)}"
-                )
-            for column in list(columns + sst.my_columns):
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.text(f"QUELLE Column: {column}")
-                with col2:
-                    l, r = st.columns(2)
-                    with l:
-                        my_rule = st.selectbox(
-                            f"Select Rule",
-                            rules,
-                            key=f"rule_{sheet}_{column}"
-                        )
-                    with r:
-                        my_rule_param = st.text_input(
-                            f"Rule Param",
-                            key=f"rule_param_{sheet}_{column}"
-                        )
-                with col3:
-                    l, r = st.columns(2)
-                    with l:
-                        ziel_sheet = st.selectbox(
-                            f"Select ZIEL Sheet",
-                            list(ziel_structure.keys()),
-                            key=f"Transformation_Rule_{sheet}_{column}"
-                        )
-                    with r:
-                        my_ziel_column = st.selectbox(
-                            f"Select ZIEL Column",
-                            ziel_structure[ziel_sheet],
-                            key=f"ziel_column_{sheet}_{column}"
-                        )
-                mapping_table.append({
-                    "Quelle_File": uploaded_quelle.name,
-                    "Quelle_Sheet": sheet,
-                    "Quelle_Column": column,
-                    "Transformation_Rule": my_rule,
-                    "Transformation_Rule_param": my_rule_param,
-                    "Ziel_File": uploaded_ziel.name,
-                    "Ziel_Sheet": ziel_sheet,
-                    "Ziel_Column": my_ziel_column,
-                })
-
-        # Display the mapping table
-        if st.button("Generate Mapping Table"):
-            sst.mapper = True
-            mapping_df = pd.DataFrame(mapping_table)
-            st.subheader("Mapping Table")
-            st.dataframe(mapping_df)
-
-            # Provide a download option for the mapping table
-            csv = mapping_df.to_csv(index=False)
-            st.download_button(
-                "Download Mapping Table",
-                csv,
-                "mapping_table.csv",
-                "text/csv",
-                key="download_csv"
-            )
 
 """

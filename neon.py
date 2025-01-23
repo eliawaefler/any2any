@@ -211,30 +211,70 @@ def test_write():
     write_to_db(connection_string, "users", new_user)
 
 
-    one2one = {
+    rule1 = {
         "guid": str(uuid.uuid4()),
         "rule_name": "cut",
         "rule_info": "direkter übertrag ohne manipulation",
         "rule_param_type": "none",
         "created_by": "Elia"
     }
-    cut_left = {
+    rule2 = {
         "guid": str(uuid.uuid4()),
         "rule_name": "cut_left",
         "rule_info": "das QUELL attribut wird von links (vorne) beschnitten, der rechte (hintere) teil wird behalten",
         "rule_param_type": "num",
         "created_by": "Elia"
     }
-    cut_right = {
+    rule3 = {
         "guid": str(uuid.uuid4()),
         "rule_name": "cut_right",
         "rule_info": "das QUELL attribut wird von rechts (hinten) beschnitten, der linke (vordere) teil wird behalten",
         "rule_param_type": "num",
         "created_by": "Elia"
     }
-    for new_rule in [one2one, cut_left, cut_right]:
-        write_to_db(connection_string, "rules", new_rule)
+     rule1 = {
+        "guid": str(uuid.uuid4()),
+        "rule_name": "multiply",
+        "rule_info": "wird mit dem parameter multipliziert",
+        "rule_param_type": "num",
+        "created_by": "Elia"
+    }
+    rule2 = {
+        "guid": str(uuid.uuid4()),
+        "rule_name": "add",
+        "rule_info": "die param zahl wird dazu addiert (kann auch minus sein)",
+        "rule_param_type": "num",
+        "created_by": "Elia"
+    }
+    rule3 = {
+        "guid": str(uuid.uuid4()),
+        "rule_name": "concat",
+        "rule_info": "mehrere Quellen werden in diesem Zielattribut zusammengefügt. "
+                     "der parameter bestimmt die Reihenfolge (kleine zahlen zuerst)",
+        "rule_param_type": "num",
+        "created_by": "Elia"
+    }
+
+    rule1 = {
+        "guid": str(uuid.uuid4()),
+        "rule_name": "cut_sep_left",
+        "rule_info": "der quell string wird beim Trennzeichen (seperator) getrennt. der LINKE Teil wird entfernt, "
+                     "der RECHTE teil wird behalten.",
+        "rule_param_type": "str",
+        "created_by": "Elia"
+    }
+    rule2 = {
+        "guid": str(uuid.uuid4()),
+        "rule_name": "cut_sep_right",
+        "rule_info": "der quell string wird beim Trennzeichen (seperator) getrennt. der RECHTE Teil wird entfernt, "
+                     "der LINKE teil wird behalten.",
+        "rule_param_type": "str",
+        "created_by": "Elia"
+    }
     """
+    for new_rule in [rule1, rule2]:
+        write_to_db(connection_string, "rules", new_rule)
+
 
 
 if __name__ == "__main__":

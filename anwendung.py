@@ -41,28 +41,28 @@ def display_user_fdm():
     st.subheader("MY FDM")
     quell, map, ziel = st.columns(3)
     with quell:
-        for q in neon.read_db(CONN, f"{sst.username}_Quelle"):
+        for q in neon.read_db(CONN, f"{sst.username}_quelle"):
             st.write(q[3])
     with map:
-        for m in neon.read_db(CONN, f"{sst.username}_Mapper"):
+        for m in neon.read_db(CONN, f"{sst.username}_mapper"):
             st.write(m[1])
     with ziel:
-        for z in neon.read_db(CONN, f"{sst.username}_Ziel"):
+        for z in neon.read_db(CONN, f"{sst.username}_ziel"):
             st.write(z[3])
 def display_user_new_file():
     new_file = st.file_uploader("upload new file")
     if new_file:
-        new_file_type = st.selectbox("select file type", options=["Quelle", "Ziel", "Transferdaten", "Mapper"])
+        new_file_type = st.selectbox("select file type", options=["quelle", "ziel", "Transferdaten", "mapper"])
         st.write(new_file_type)
         if new_file_type == "mapper":
             if st.button("add to my mappers"):
-                if neon.write_to_db(CONN, f"{sst.username}_mappers",
+                if neon.write_to_db(CONN, f"{sst.username}_mapper",
                                     {new_file.name: {new_file.read()}}) == "success":
                     st.success("mapper added")
                     st.rerun()
                 else:
                     st.error("could not add mapper")
-        elif new_file_type in ["Quelle", "Ziel"]:
+        elif new_file_type in ["quelle", "ziel"]:
             data_stucture = st.selectbox("data structure", ["row0", "row1", "A and row0", "A and row1", "other"])
             if st.button("add to my FDM"):
                 with st.spinner("Processing file..."):
@@ -87,12 +87,23 @@ def display_user_new_file():
 
         elif new_file_type == "Transferdaten":
             # add logic to select
-            this_mapper = st.selectbox("MAPPER: ", options=[])  # get my MAPPERs
-            this_ziel = st.selectbox("ZIEL: ", options=[])  # get my ZIELs
-            if st.button("EXECUTE"):
-                # add transfer logic
-                pass
-
+            all_mappers = neon.read_db(CONN, f"{sst.username}_mapper")
+            all_ziele = neon.read_db(CONN, f"{sst.username}_ziel")
+            selected_mapper = st.selectbox("MAPPER: ", options=[m[1] for m in all_mappers])
+            selected_ziel = st.selectbox("ZIEL: ", options=[z[3] for z in all_ziele]+["mapper-defined", "GTO (read only)"])
+            this_mapper = json.loads(next(item[2] for item in all_mappers if item[1] == selected_mapper).replace("'", '"'))
+            if selected_ziel == "mapper-defined":
+                if st.button("EXECUTE"):
+                    data_handling.execute_mapper_transformation(new_file, this_mapper)
+            elif selected_ziel == "GTO (read everything)":
+                #add logic
+                this_ziel = [] #pull FDM
+                if st.button("EXECUTE"):
+                    data_handling.execute_gto_transformation(new_file, this_mapper, this_ziel)
+            else:
+                this_ziel =  next(item[4] for item in all_ziele if item[3] == selected_ziel)
+                if st.button("EXECUTE"):
+                    data_handling.execute_ziel_transformation(new_file, this_mapper, this_ziel)
 
 def display_user_home():
     a, b = st.columns(2)
@@ -109,24 +120,15 @@ def display_user_home():
 
 def display_user_new_mapper():
 
-    if "mapping_table" not in sst:
-        sst.mapping_table = []
-    if "mapper_name" not in sst:
-        sst.mapper_name = str(uuid.uuid4())
-    if "quell_cols" not in sst:
-        sst.quell_cols = []
-    if "ziel_cols" not in sst:
-        sst.ziel_cols = []
-
     st.subheader("NEW MAPPER")
     rules = neon.read_db(CONN, "rules")
     rule_names = [r[1] for r in rules]
     rule_infos = [r[2] for r in rules]
     rule_param_type = [r[3] for r in rules]
 
-    quellen = neon.read_db(CONN, f"{sst.username}_Quelle")
+    quellen = neon.read_db(CONN, f"{sst.username}_quelle")
     quell_namen = [q[3] for q in quellen]
-    ziele = neon.read_db(CONN, f"{sst.username}_Ziel")
+    ziele = neon.read_db(CONN, f"{sst.username}_ziel")
     ziel_namen = [z[3] for z in ziele]
 
     if st.toggle("show rule information"):
@@ -154,49 +156,72 @@ def display_user_new_mapper():
     with add_c3:
         ziel_entity = st.selectbox("Ziel", ziel_namen)
 
-
-    if st.button("create mapper table"):
+    if st.button("create new mapper table"):
+        reset_sst()
         sst.mapping_table = []
         sst.quell_cols = quellen[quell_namen.index(quell_entity)][4]
         sst.ziel_cols = ziele[ziel_namen.index(ziel_entity)][4]
+        sst.rows = len(sst.quell_cols)
+
+        #sst.sel_quell_col = [None for _ in range(sst.rows)]
+        #sst.sel_ziel_col = [None for _ in range(sst.rows)]
+        #sst.sel_rule = [None for _ in range(sst.rows)]
+        #sst.sel_rule_p = [None for _ in range(sst.rows)]
         sst.new_mapper = True
-    st.write(sst.quell_cols)
+
+    if st.button("add row"):
+        sst.rows += 1
+        #sst.sel_quell_col.append(None)
+        #sst.sel_ziel_col.append(None)
+        #sst.sel_rule.append(None)
+        #sst.sel_rule_p.append(None)
+
     if sst.new_mapper:
-        for column in sst.quell_cols:
+        no_sst_quell_col = [None for _ in range(sst.rows)]
+        no_sst_rule = [None for _ in range(sst.rows)]
+        no_sst_rule_p = [None for _ in range(sst.rows)]
+        no_sst_ziel_col = [None for _ in range(sst.rows)]
+        for n in range(sst.rows):
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.text("")
-                st.subheader(f"QUELLE: {column}")
+                no_sst_quell_col[n] = st.selectbox(
+                    f"Select Quelle Column",
+                    sst.quell_cols,
+                    key=f"quel_column_{quell_entity}_{n}"
+                )
             with col2:
                 l, r = st.columns(2)
                 with l:
-                    my_rule = st.selectbox(
+                    no_sst_rule[n] = st.selectbox(
                         f"Select Rule",
                         rule_names,
-                        key=f"rule_{quell_entity}_{column}"
+                        key=f"rule_{quell_entity}_{n}"
                     )
                 with r:
-                    my_rule_param = st.text_input(
+                    no_sst_rule_p[n] = st.text_input(
                         f"Rule Param",
-                        key=f"rule_param_{quell_entity}_{column}"
+                        key=f"rule_param_{quell_entity}_{n}"
                     )
             with col3:
-                my_ziel_column = st.selectbox(
+                no_sst_ziel_col[n] = st.selectbox(
                     f"Select ZIEL Column",
                     sst.ziel_cols,
-                    key=f"ziel_column_{ziel_entity}_{column}"
+                    key=f"ziel_column_{ziel_entity}_{n}"
                 )
-            sst.mapping_table.append({
-                "Quelle_Sheet": quell_entity,
-                "Quelle_Column": column,
-                "Transformation_Rule": my_rule,
-                "Transformation_Rule_param": my_rule_param,
-                "Ziel_Sheet": ziel_entity,
-                "Ziel_Column": my_ziel_column,
-            })
 
         # Display the mapping table
         if st.button("save Mapper"):
+            sst.mapping_table = []
+            for n in range(sst.rows):
+                sst.mapping_table.append({
+                    "Quelle_Sheet": quell_entity,
+                    "Quelle_Column": no_sst_quell_col[n],
+                    "Transformation_Rule": no_sst_rule[n],
+                    "Transformation_Rule_param": no_sst_rule_p[n],
+                    "Ziel_Sheet": ziel_entity,
+                    "Ziel_Column": no_sst_ziel_col[n],
+                })
+            st.write(sst.mapping_table)
             data = {"guid": str(uuid.uuid4()),
                     "name": sst.mapper_name,
                     "data": str(sst.mapping_table)}
@@ -254,27 +279,76 @@ def display_user_execute():
         "text/csv",
         key="download_ziel_csv"
     )
-
-def main():
+def reset_sst():
+    sst.sel_rule_p = []
+    sst.sel_rule = []
+    sst.sel_quell_col = []
+    sst.sel_ziel_col = []
+    sst.new_mapper = False
+    sst.mapping_table = []
+    sst.mapper_name = str(uuid.uuid4())
+    sst.quell_cols = []
+    sst.ziel_cols = []
+    sst.rows = 0
+def innit_st_page(debug=False):
     st.set_page_config(
         page_title="any2any",  #:cyclone::hammer_and_pick::recycle:
         page_icon=":twisted_rightwards_arrows:",  # quelle: :potable_water:, ziel: :dart:
         # You can use emojis or path to an image file :repeat: oder :cyclone: :radio_button: :recycle: :hammer_and_pick:
         layout="centered"  # 'centered' or 'wide' :scissors: :arrow_left: :arrow_right:
     )
+
     if "user_logged_in" not in sst:
         sst.user_logged_in = False
     if "username" not in sst:
         sst.username = False
     if "page" not in sst:
         sst.page = "welcome"
+
     if "new_mapper" not in sst:
         sst.new_mapper = False
+    if "mapping_table" not in sst:
+        sst.mapping_table = []
+    if "mapper_name" not in sst:
+        sst.mapper_name = str(uuid.uuid4())
 
-    st.write(f"login: {sst.user_logged_in}")
-    st.write(f"username: {sst.username}")
-    st.write(f"page: {sst.page}")
+    if "quell_cols" not in sst:
+        sst.quell_cols = []
+    if "ziel_cols" not in sst:
+        sst.ziel_cols = []
+    if "rows" not in sst:
+        sst.rows = 0
 
+    if "sel_quell_col" not in sst:
+        sst.sel_quell_col = []
+    if "sel_ziel_col" not in sst:
+        sst.sel_ziel_col = []
+    if "sel_rule" not in sst:
+        sst.sel_rule = []
+    if "sel_rule_p" not in sst:
+        sst.sel_rule_p = []
+
+    if debug:
+        debug1, debug2, debug3, debug4 = st.columns(4)
+        with debug1:
+            st.write(f"login: {str(sst.user_logged_in)[:20]}")
+            st.write(f"username: {str(sst.username)[:20]}")
+            st.write(f"page: {str(sst.page)[:20]}")
+        with debug2:
+            st.write(f"new_mapper: {str(sst.new_mapper)[:20]}")
+            st.write(f"m_table: {str(sst.mapping_table)[:20]}")
+            st.write(f"m_name: {str(sst.mapper_name)[:20]}")
+        with debug3:
+            st.write(f"quell_cols: {str(sst.quell_cols)[:20]}")
+            st.write(f"ziel_cols: {str(sst.ziel_cols)[:20]}")
+            st.write(f"rows: {str(sst.rows)[:20]}")
+        with debug4:
+            st.write(f"sel_quel: {str(sst.sel_quell_col)[:20]}")
+            st.write(f"sel_ziel: {str(sst.sel_ziel_col)[:20]}")
+            st.write(f"sel_rule: {str(sst.sel_rule)[:20]}")
+            st.write(f"sel_rule_p: {str(sst.sel_rule_p)[:20]}")
+def main():
+    innit_st_page(debug=True)
     hauptbereich, rechts, ganz_rechts = st.columns([12, 2, 2])
     if sst.user_logged_in:
         with hauptbereich:
@@ -282,6 +356,7 @@ def main():
             st.title(f"")
         with rechts:
             if st.button("home"):
+                reset_sst()
                 sst.page = "user_home"
                 st.rerun()
         with ganz_rechts:
