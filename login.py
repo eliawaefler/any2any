@@ -94,7 +94,7 @@ def display_login():
     """Display the login interface."""
 
     st.subheader("Login")
-    email = st.text_input("Email")
+    email = st.text_input("Email oder username")
     password = st.text_input("Passwort", type='password')
 
     if st.button("Login"):
