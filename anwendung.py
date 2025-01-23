@@ -3,7 +3,6 @@ import uuid
 
 import streamlit as st
 import pandas as pd
-from Demos.win32cred_demo import username
 
 import neon
 import login
@@ -197,7 +196,7 @@ def display_user_new_mapper():
             data = {"guid": str(uuid.uuid4()),
                     "name": sst.mapper_name,
                     "data": sst.mapping_table}
-            if neon.write_to_db(CONN, f"{username}_mapper", data) == "success":
+            if neon.write_to_db(CONN, f"{sst.username}_mapper", data) == "success":
                 st.success("mapper saved")
             else:
                 st.error("couldn't save mapper")

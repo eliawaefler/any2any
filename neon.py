@@ -204,12 +204,12 @@ def test_write():
 if __name__ == "__main__":
     #CONN_STRING = os.environ["NEON_KEY"] # streamlit secret
     connection_string = os.environ["NEON_URL_any"] # for local
-    #test_create_tables()
-    #test_write()
+
 
     # to reset users tables:
     dropped = drop_tables_with_pattern(connection_string, pattern="_")
     print(f"Dropped tables: {dropped}")
-
+    #test_create_tables()
+    #test_write()
     #users_db = read_db(connection_string, "users", printout=False)
     #print(users_db)
