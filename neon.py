@@ -3,6 +3,51 @@ import uuid
 import psycopg2
 import os
 
+def drop_tables_with_pattern(connection_string, pattern="_"):
+    """
+    Drops all tables in the database that contain a specific pattern (default is '_') in their name.
+
+    Parameters:
+        connection_string (str): The database connection string (e.g., in PostgreSQL format).
+        pattern (str, optional): The pattern to search for in table names (default is '_').
+
+    Returns:
+        list: A list of table names that were dropped.
+    """
+    try:
+        # Establish database connection
+        conn = psycopg2.connect(connection_string)
+        cur = conn.cursor()
+
+        # Query to get all table names with the specified pattern in their name
+        query = f"""
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name LIKE '%{pattern}%';
+        """
+        cur.execute(query)
+        tables = cur.fetchall()
+
+        # Drop each table
+        dropped_tables = []
+        for (table_name,) in tables:
+            if pattern in table_name:
+                drop_query = f"DROP TABLE IF EXISTS {table_name} CASCADE;"
+                cur.execute(drop_query)
+                dropped_tables.append(table_name)
+
+        # Commit the changes
+        conn.commit()
+
+        # Close resources
+        cur.close()
+        conn.close()
+
+        return dropped_tables
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return []
+
 def create_table(connection_string, table_name, columns):
     """
     Creates a new table in the database if it does not already exist.
@@ -118,7 +163,7 @@ def read_db(connection_string, table, condition='1=1', printout=False):
         return str(e)
 
 def test_create_tables():
-    """
+
     table_name = "users"
     columns = {
         "guid": "UUID PRIMARY KEY",  # Unique identifier
@@ -130,8 +175,8 @@ def test_create_tables():
         "salt": "VARCHAR(255) NOT NULL",  # Salt for password hashing (required)
         "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
     }
-    """
 
+    """
     table_name = "rules"
     columns = {
         "guid": "SERIAL PRIMARY KEY",  # Unique identifier
@@ -140,7 +185,9 @@ def test_create_tables():
         "created_by": "VARCHAR(100)",
         "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
     }
+    """
     print(create_table(connection_string, table_name, columns))
+
 def test_write():
     new_user = {
         "guid": str(uuid.uuid4()),
@@ -157,7 +204,12 @@ def test_write():
 if __name__ == "__main__":
     #CONN_STRING = os.environ["NEON_KEY"] # streamlit secret
     connection_string = os.environ["NEON_URL_any"] # for local
-    #main_create_tables()
+    #test_create_tables()
     #test_write()
-    users_db = read_db(connection_string, "users", printout=False)
-    print(users_db)
+
+    # to reset users tables:
+    dropped = drop_tables_with_pattern(connection_string, pattern="_")
+    print(f"Dropped tables: {dropped}")
+
+    #users_db = read_db(connection_string, "users", printout=False)
+    #print(users_db)

@@ -4,10 +4,7 @@ import uuid
 import hashlib
 import pandas as pd
 import time
-
-import streamlit
 import streamlit as st
-
 import neon
 
 # Constants
@@ -21,8 +18,6 @@ def hash_password(password):
 
 def generate_salt():
     return hash_password(str(time.time()))
-
-
 
 # Local Database Functions
 def load_users_locally():
@@ -125,7 +120,38 @@ def display_signup():
     if st.button("Registrieren"):
         if username and email and password and first_name and last_name:
             if register_user(username, email, password, first_name, last_name):
+                neon.create_table(CONN, f"{username}_Mapper", {
+                                    "guid": "UUID PRIMARY KEY",  # Unique identifier
+                                    "API": "VARCHAR(255) NOT NULL",
+                                    "file_name": "VARCHAR(255) NOT NULL",
+                                    "entity_name": "VARCHAR(255) NOT NULL",
+                                    "entity_attributes": "JSONB NOT NULL",
+                                    "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+                                    })
+                neon.create_table(CONN, f"{username}_Quelle", {
+                                    "guid": "UUID PRIMARY KEY",  # Unique identifier
+                                    "API": "VARCHAR(255) NOT NULL",
+                                    "file_name": "VARCHAR(255) NOT NULL",
+                                    "entity_name": "VARCHAR(255) NOT NULL",
+                                    "entity_attributes": "JSONB NOT NULL",
+                                    "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+                                    })
+                neon.create_table(CONN, f"{username}_Ziel", {
+                                    "guid": "UUID PRIMARY KEY",  # Unique identifier
+                                    "API": "VARCHAR(255) NOT NULL",
+                                    "file_name": "VARCHAR(255) NOT NULL",
+                                    "entity_name": "VARCHAR(255) NOT NULL",
+                                    "entity_attributes": "JSONB NOT NULL",
+                                    "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+                                    })
+                neon.create_table(CONN, f"{username}_FDM", {
+                                    "guid": "UUID PRIMARY KEY",  # Unique identifier
+                                    "entity_name": "VARCHAR(255) NOT NULL",  #
+                                    "attributes": "JSONB NOT NULL",
+                                    "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+                                    })
                 st.success(f"Konto für {email} wurde erfolgreich erstellt!")
+
             else:
                 st.error("Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.")
         else:
@@ -159,5 +185,4 @@ def main_local():
         display_forgot_pw()
 
 if __name__ == "__main__":
-
     main_local()
