@@ -49,7 +49,6 @@ def display_welcome():
                             """)
 
 def display_user_fdm():
-    st.subheader("MY FDM")
     quell, map, ziel = st.columns(3)
     quellen = neon.read_db(CONN, f"{sst.username}_quelle")
     mappers = neon.read_db(CONN, f"{sst.username}_mapper")
@@ -64,6 +63,10 @@ def display_user_fdm():
         st.subheader("erstelle Deinen ersten MAPPER  :twisted_rightwards_arrows:          -->>")
     else:
         st.write("to execute a transformation, upload data")
+        st.write("")
+
+        st.subheader("MY FDM")
+
         with quell:
             st.subheader(":potable_water:")
             for q in quellen:
