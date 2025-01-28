@@ -145,7 +145,6 @@ def display_user_home():
         display_user_new_file(new_file)
 def display_user_new_mapper():
     st.subheader("NEW MAPPER")
-    sst.new_mapper = False
     rules = neon.read_db(CONN, "rules")
     rule_names = ["1:1"] + [s for s in [r[1] for r in rules] if s != "1:1"]
     rule_infos = ["direkter übertrag ohne aktion"] + [s for s in [r[2] for r in rules] if "direkter übertrag" not in s]
@@ -169,15 +168,14 @@ def display_user_new_mapper():
             with gr:
                 st.write(f"Type HINT: {rule_param_type[rule_n]}")
 
-    if not sst.new_mapper:
-        sst.quell_ziel_names[0] = st.selectbox("Quelle", quell_file_namen)
-        st.subheader(":twisted_rightwards_arrows:")
-        sst.mapper_name = st.text_input("mapper name: ")
-        sst.quell_ziel_names[1] = st.selectbox("Ziel", ziel_file_namen)
+    quelle = st.selectbox(":potable_water: Quelle", quell_file_namen)
+    mapper_name = st.text_input(":twisted_rightwards_arrows: mapper name: ")
+    ziel = st.selectbox(":dart: Ziel ", ziel_file_namen)
 
     if st.button("create new mapper table"):
-        reset_sst()
-        quelle, ziel = sst.quell_ziel_names
+        sst.quell_ziel_names[0] = quelle
+        sst.quell_ziel_names[1] = ziel
+        sst.mapper_name = mapper_name
         for q in quellen:
             if q[2] == quelle:
                 quell_entity_namen.append(q[3])
@@ -195,13 +193,11 @@ def display_user_new_mapper():
         add_c1, add_c2, add_c3 = st.columns(3)
         quelle, ziel = sst.quell_ziel_names
         with add_c1:
-            st.subheader(quelle)
+            st.subheader(f":potable_water: {quelle}")
         with add_c2:
-            st.subheader(sst.mapper_name)
-            st.subheader(":twisted_rightwards_arrows:")
+            st.subheader(f":twisted_rightwards_arrows: {sst.mapper_name}")
         with add_c3:
-            st.subheader(ziel)
-            st.subheader(ziel)
+            st.subheader(f":dart: {ziel}")
         no_sst_quell_name = [None for _ in range(sst.rows)]
         no_sst_quell_col = [None for _ in range(sst.rows)]
         no_sst_rule = [None for _ in range(sst.rows)]
@@ -245,25 +241,18 @@ def display_user_new_mapper():
                     sst.ziel_cols[no_sst_ziel_name[n]],
                     key=f"ziel_column_{quelle}_{n}"
                 )
-
         a, b, c, d = st.columns([2, 1, 1, 8])
-        with b:
-            if st.button("add row"):
-                sst.rows += 1
-        with c:
-            if st.button("remove row"):
-                sst.rows += -1
         with a:
             # Display the mapping table
             if st.button("save Mapper"):
                 sst.mapping_table = []
                 for n in range(sst.rows):
                     sst.mapping_table.append({
-                        "Quelle_Sheet": quell_entity,
+                        "Quelle_Sheet": no_sst_quell_name[n],
                         "Quelle_Column": no_sst_quell_col[n],
                         "Transformation_Rule": no_sst_rule[n],
                         "Transformation_Rule_param": no_sst_rule_p[n],
-                        "Ziel_Sheet": ziel_entity,
+                        "Ziel_Sheet": no_sst_ziel_name[n],
                         "Ziel_Column": no_sst_ziel_col[n],
                     })
                 data = {"guid": str(uuid.uuid4()),
@@ -273,6 +262,13 @@ def display_user_new_mapper():
                     st.success("mapper saved")
                 else:
                     st.error("couldn't save mapper")
+        with b:
+            if st.button("add row"):
+                sst.rows += 1
+        with c:
+            if st.button("remove row"):
+                sst.rows += -1
+
 def display_user_execute():
     st.subheader("EXECUTE")
     uploaded_mapping_table = []  # TEMP
@@ -328,7 +324,8 @@ def reset_sst():
     sst.sel_ziel_col = []
     sst.new_mapper = False
     sst.mapping_table = []
-    sst.quell_ziel_names = []
+    sst.m_name = ""
+    sst.quell_ziel_names = ["", ""]
     sst.quell_cols = {}
     sst.ziel_cols = {}
     sst.rows = 0
@@ -373,7 +370,7 @@ def innit_st_page(debug=False):
         sst.quell_ziel_names = []
 
     if debug:
-        debug1, debug2, debug3, debug4 = st.columns(4)
+        debug1, debug2, debug3, debug4, debug5 = st.columns(5)
         with debug1:
             st.write(f"login: {str(sst.user_logged_in)[:20]}")
             st.write(f"username: {str(sst.username)[:20]}")
@@ -390,9 +387,10 @@ def innit_st_page(debug=False):
             st.write(f"sel_quel: {str(sst.sel_quell_col)[:20]}")
             st.write(f"sel_ziel: {str(sst.sel_ziel_col)[:20]}")
             st.write(f"sel_rule: {str(sst.sel_rule)[:20]}")
-            st.write(f"sel_rule_p: {str(sst.sel_rule_p)[:20]}")
+        with debug5:
+            st.write(f"quell_ziel_names: {str(sst.quell_ziel_names)[:20]}")
 def main():
-    innit_st_page(debug=False)
+    innit_st_page(debug=True)
     hauptbereich, rechts, ganz_rechts = st.columns([12, 2, 2])
     if sst.user_logged_in:
         with hauptbereich:
