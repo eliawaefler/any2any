@@ -160,3 +160,42 @@ def read_db(connection_string, table, condition='1=1', printout=False):
         print(f"An error occurred: {e}")
         return str(e)
 
+def delete_record(connection_string, table_name, column_name, value_to_delete):
+    """
+    Deletes a record from the specified table where the column matches the given value.
+
+    Args:
+        table_name (str): Name of the table.
+        column_name (str): Name of the column to filter by.
+        value_to_delete (str/int): Value of the record to delete.
+        connection_string (str): Database connection parameters (host, database, user, password).
+
+    Returns:
+        str: Success message or error details.
+    """
+    try:
+        # Connect to the database
+        conn = psycopg2.connect(connection_string)
+        cur = conn.cursor()
+
+        # Create the DELETE SQL query dynamically
+        delete_query = f"DELETE FROM {table_name} WHERE {column_name} = %s"
+
+        # Execute the DELETE query
+        cur.execute(delete_query, (value_to_delete,))
+
+        # Commit the changes
+        conn.commit()
+
+        # Return success message
+        return f"{cur.rowcount} record(s) deleted from {table_name} where {column_name} = {value_to_delete}."
+
+    except Exception as e:
+        return f"Error occurred: {e}"
+
+    finally:
+        # Ensure resources are released
+        if 'cursor' in locals() and cur is not None:
+            cur.close()
+        if 'connection' in locals() and conn is not None:
+            conn.close()

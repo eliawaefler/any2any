@@ -3,11 +3,29 @@ import time
 import uuid
 import streamlit as st
 import pandas as pd
+
 import neon
 import login
 import data_handling
 import json
 
+def display_square():
+    x, y, z, o = sst.square
+    # Add a colored square
+    st.markdown(
+        f"""
+        <div style="
+            position:absolute; 
+            top: {x}px; 
+            left:{y}px; 
+            width:{z}px; 
+            height:{z}px; 
+            background-color:rgba(255, 0, 0, {o}); 
+            margin:0;">
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 def display_welcome():
 
     st.write("transforming data since 2025")
@@ -67,8 +85,23 @@ def display_user_fdm():
 
         with quell:
             st.subheader(":potable_water:")
-            for q in quellen:
-                st.write(f"{q[2]}_{q[3]}")
+            quellfiles = list(set([q[2] for q in quellen]))
+            for qf in quellfiles:
+                st.subheader(qf[:-5])
+                if st.toggle(f"show attributes", key=f"{qf}_show"):
+                    for q in quellen:
+                        if q[2] == qf:
+                            st.write(f"{q[3]}")
+                    if st.toggle(f"show delete button"):
+                        if st.button("delete this QUELLE"):
+                            table_name = f"{sst.username}_quelle"
+                            if table_name in neon.delete_record(CONN, table_name, "file_name", qf):
+                                st.success(f"deleted: {qf}")
+                                time.sleep(2)
+                                st.rerun()
+                            else:
+                                st.error("something went wrong")
+
         with map:
             st.subheader(":twisted_rightwards_arrows:")
             for m in mappers:
@@ -269,7 +302,6 @@ def display_user_new_mapper():
             if st.button("remove row"):
                 sst.rows += -1
                 st.rerun()
-
 def display_user_execute():
     st.subheader("EXECUTE")
     uploaded_mapping_table = []  # TEMP
@@ -370,6 +402,9 @@ def innit_st_page(debug=False):
     if "quell_ziel_names" not in sst:
         sst.quell_ziel_names = []
 
+    if "square" not in sst:
+        sst.square = [500, 300, 100, "0.3"]
+
     if debug:
         debug1, debug2, debug3, debug4, debug5 = st.columns(5)
         with debug1:
@@ -392,6 +427,8 @@ def innit_st_page(debug=False):
             st.write(f"quell_ziel_names: {str(sst.quell_ziel_names)[:20]}")
 def main():
     innit_st_page(debug=False)
+
+    #display_square()
     hauptbereich, rechts, ganz_rechts = st.columns([12, 2, 2])
     if sst.user_logged_in:
         with hauptbereich:
