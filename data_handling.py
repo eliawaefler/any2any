@@ -22,7 +22,6 @@ def get_headers(uploaded_file):
         excel_data = pd.ExcelFile(uploaded_file)
         sheet_names = excel_data.sheet_names
 
-        st.sidebar.header("Header Detection Options")
         detected_headers = {}
         detected_header_vals = {}
 

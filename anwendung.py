@@ -100,13 +100,12 @@ def display_user_new_file(my_file):
                         "entity_attributes": json_attributes
                         }
                 if neon.write_to_db(CONN, f"{sst.username}_{new_file_type}", data) == "success":
-                    st.success(f"{my_file.name} was addet to your FDM")
+                    st.success(f"saved  {my_file.name} // {entity}")
                 else:
                     st.error(f"could not add {new_file_type}")
                     time.sleep(3)
                     st.rerun()
             time.sleep(3)
-            new_file = False
             sst.page = "user_home"
             st.rerun()
 
@@ -170,44 +169,29 @@ def display_user_new_mapper():
             with gr:
                 st.write(f"Type HINT: {rule_param_type[rule_n]}")
 
-
-
     if not sst.new_mapper:
-        add_c1, add_c2, add_c3 = st.columns(3)
-        with add_c1:
-            quelle = st.selectbox("Quelle", quell_file_namen)
-        with add_c2:
-            a, b, c, = st.columns([1, 1, 5])
-            with b:
-                st.subheader("")
-                st.subheader(":twisted_rightwards_arrows:")
-            with c:
-                sst.mapper_name = st.text_input("mapper name: ")
-        with add_c3:
-            ziel = st.selectbox("Ziel", ziel_file_namen)
+        sst.quell_ziel_names[0] = st.selectbox("Quelle", quell_file_namen)
+        st.subheader(":twisted_rightwards_arrows:")
+        sst.mapper_name = st.text_input("mapper name: ")
+        sst.quell_ziel_names[1] = st.selectbox("Ziel", ziel_file_namen)
 
-            if st.button("create new mapper table"):
-                reset_sst()
-                sst.mapping_table = []
-                sst.quell_ziel_names = [quelle, ziel]
-                for q in quellen:
-                    if q[2] == quelle:
-                        quell_entity_namen.append(q[3])
+    if st.button("create new mapper table"):
+        reset_sst()
+        quelle, ziel = sst.quell_ziel_names
+        for q in quellen:
+            if q[2] == quelle:
+                quell_entity_namen.append(q[3])
+        for entity in quell_entity_namen:
+            sst.quell_cols[entity] = quellen[quell_entity_namen.index(entity)][4]
+        for z in ziele:
+            if z[2] == ziel:
+                ziel_entity_namen.append(z[3])
+        for entity in ziel_entity_namen:
+            sst.ziel_cols[entity] = ziele[ziel_entity_namen.index(entity)][4]
+        sst.rows = 6
+        sst.new_mapper = True
 
-                for entity in quell_entity_namen:
-                    sst.quell_cols[entity] = quellen[quell_entity_namen.index(entity)][4]
-
-                for z in ziele:
-                    if z[2] == ziel:
-                        ziel_entity_namen.append(z[3])
-
-                for entity in ziel_entity_namen:
-                    sst.ziel_cols[entity] = ziele[ziel_entity_namen.index(entity)][4]
-
-                sst.rows = 6
-                sst.new_mapper = True
-
-    else:
+    if sst.new_mapper:
         add_c1, add_c2, add_c3 = st.columns(3)
         quelle, ziel = sst.quell_ziel_names
         with add_c1:
@@ -344,7 +328,6 @@ def reset_sst():
     sst.sel_ziel_col = []
     sst.new_mapper = False
     sst.mapping_table = []
-    sst.mapper_name = str(uuid.uuid4())
     sst.quell_ziel_names = []
     sst.quell_cols = {}
     sst.ziel_cols = {}

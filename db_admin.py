@@ -167,6 +167,6 @@ if __name__ == "__main__":
 
     # to DROP ALL users tables
     #print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="_")}")
-    any2any_users_reset()
+    #any2any_users_reset()
     #users_db = read_db(CONN, "users", printout=False)
     #print(users_db)
