@@ -1,7 +1,85 @@
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
+import pandas as pd
+import streamlit as st
+from io import BytesIO
+import openpyxl
 
+def highlight_headers(df, header_locs):
+    """Highlight the detected headers based on their location."""
+    def highlight(row):
+        return [
+            "background-color: yellow;" if (row.name, col_idx) in header_locs else ""
+            for col_idx in range(len(df.columns))
+        ]
+    return df.style.apply(highlight, axis=1)
+
+
+def get_headers(uploaded_file):
+    if uploaded_file:
+        # Read the Excel file and get sheet names
+        excel_data = pd.ExcelFile(uploaded_file)
+        sheet_names = excel_data.sheet_names
+
+        st.sidebar.header("Header Detection Options")
+        detected_headers = {}
+        detected_header_vals = {}
+
+        # Create tabs for each sheet
+        tabs = st.tabs(sheet_names)
+
+        for i, sheet_name in enumerate(sheet_names):
+            with tabs[i]:
+                st.subheader(f"Sheet: {sheet_name}")
+
+                # Read the sheet as a DataFrame
+                sheet_df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None)
+
+                # Allow user to select the header row
+                max_rows = min(len(sheet_df), 10)
+                header_row = st.selectbox(
+                    f"Select the header row for {sheet_name}",
+                    options=list(range(max_rows)),
+                    index=0,
+                    key=f"header_row_{sheet_name}"
+                )
+
+                # Allow user to select if there is a header column (2D table)
+                headers_in_row = st.toggle(f"Does {sheet_name} contain headers in a row?", key=f"headers_in_row_{sheet_name}", value=True)
+                headers_in_col = st.toggle(f"Does {sheet_name} contain headers in a column?", key=f"headers_in_col_{sheet_name}")
+
+                # Extract header locations based on user input
+                header_locs = []
+                header_vals = []
+                if headers_in_col:
+                    # Allow user to select the header row
+                    max_cols = min(len(sheet_df), 10)
+                    header_col = st.selectbox(
+                        f"Select the header col for {sheet_name}",
+                        options=list(range(max_cols)),
+                        index=0,
+                        key=f"header_col_{sheet_name}"
+                    )
+                    for row in range(len(list(sheet_df.iterrows()))):
+                        header_locs.append((row, header_col))
+
+                if headers_in_row:
+                    for col in range(len(sheet_df.columns)):
+                        header_locs.append((header_row, col))
+                        header_vals.append(sheet_df.iloc[header_row, col])
+
+                detected_headers[sheet_name] = header_locs
+                detected_header_vals[sheet_name] = header_vals
+
+                # Highlight headers and display the DataFrame
+                highlighted_df = highlight_headers(sheet_df, header_locs)
+                st.write("Highlighted DataFrame:")
+                st.dataframe(highlighted_df)
+
+        # Button to confirm headers
+        if st.button("Confirm Headers for all sheets"):
+            return detected_header_vals
 
 # Function to extract entity names and attribute names
 def extract_entity_attributes(file, structure="other"):

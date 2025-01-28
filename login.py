@@ -15,7 +15,7 @@ CONN = os.environ["NEON_URL_any"]
 
 # Helper Functions
 def hash_password(password):
-    return hashlib.sha256(password).hexdigest()
+    return hashlib.sha256(password.encode()).hexdigest()
 
 def generate_salt():
     return hash_password(str(uuid.uuid4()))

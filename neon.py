@@ -1,7 +1,5 @@
-import uuid
-import psycopg2
-import os
 
+import psycopg2
 
 def drop_tables_with_pattern(connection_string, pattern="_"):
     """
@@ -23,7 +21,7 @@ def drop_tables_with_pattern(connection_string, pattern="_"):
         query = f"""
         SELECT table_name
         FROM information_schema.tables
-        WHERE table_schema = 'public' AND table_name LIKE '%{pattern}%';
+        WHERE table_schema = 'public';
         """
         cur.execute(query)
         tables = cur.fetchall()
@@ -162,127 +160,3 @@ def read_db(connection_string, table, condition='1=1', printout=False):
         print(f"An error occurred: {e}")
         return str(e)
 
-def test_create_tables(connection_string):
-
-    """
-    table_name = "users"
-    columns = {
-        "guid": "UUID PRIMARY KEY",  # Unique identifier
-        "username": "VARCHAR(100) NOT NULL",  # Username (required)
-        "email": "VARCHAR(255) NOT NULL",  # Email (required)
-        "pw_hash": "VARCHAR(255) NOT NULL",  # Password hash (required)
-        "first_name": "VARCHAR(100)",  # First name (optional)
-        "last_name": "VARCHAR(100)",  # Last name (optional)
-        "salt": "VARCHAR(255) NOT NULL",  # Salt for password hashing (required)
-        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
-    }
-    table_name = "rules"
-    columns = {
-        "guid": "UUID PRIMARY KEY",  # Unique identifier
-        "rule_name": "VARCHAR(1000)", # the rule to execute (NAME)
-        "rule_info": "VARCHAR(1000)",
-        "rule_param_type": "VARCHAR(1000)",
-        "created_by": "VARCHAR(100)",
-        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
-    }
-
-
-    """
-    table_name = "elu_mapper"
-    columns = {
-        "guid": "UUID PRIMARY KEY",  # Unique identifier
-        "name": "VARCHAR(1000)",
-        "data": "VARCHAR(1000000)"
-    }
-
-    print(create_table(connection_string, table_name, columns))
-
-def test_write(connection_string):
-    """
-    new_user = {
-        "guid": str(uuid.uuid4()),
-        "username": "e2",
-        "email": "elia.w2aefler@gmail.com",  # Email (required)
-        "pw_hash": "1234",  # Password hash (required)
-        "first_name": "Elia",  # First name (optional)
-        "last_name": "WAE",  # Last name (optional)
-        "salt": "1234",  # Salt for password hashing (required)
-    }
-    write_to_db(connection_string, "users", new_user)
-
-
-    rule1 = {
-        "guid": str(uuid.uuid4()),
-        "rule_name": "cut",
-        "rule_info": "direkter übertrag ohne manipulation",
-        "rule_param_type": "none",
-        "created_by": "Elia"
-    }
-    rule2 = {
-        "guid": str(uuid.uuid4()),
-        "rule_name": "cut_left",
-        "rule_info": "das QUELL attribut wird von links (vorne) beschnitten, der rechte (hintere) teil wird behalten",
-        "rule_param_type": "num",
-        "created_by": "Elia"
-    }
-    rule3 = {
-        "guid": str(uuid.uuid4()),
-        "rule_name": "cut_right",
-        "rule_info": "das QUELL attribut wird von rechts (hinten) beschnitten, der linke (vordere) teil wird behalten",
-        "rule_param_type": "num",
-        "created_by": "Elia"
-    }
-     rule1 = {
-        "guid": str(uuid.uuid4()),
-        "rule_name": "multiply",
-        "rule_info": "wird mit dem parameter multipliziert",
-        "rule_param_type": "num",
-        "created_by": "Elia"
-    }
-    rule2 = {
-        "guid": str(uuid.uuid4()),
-        "rule_name": "add",
-        "rule_info": "die param zahl wird dazu addiert (kann auch minus sein)",
-        "rule_param_type": "num",
-        "created_by": "Elia"
-    }
-    rule3 = {
-        "guid": str(uuid.uuid4()),
-        "rule_name": "concat",
-        "rule_info": "mehrere Quellen werden in diesem Zielattribut zusammengefügt. "
-                     "der parameter bestimmt die Reihenfolge (kleine zahlen zuerst)",
-        "rule_param_type": "num",
-        "created_by": "Elia"
-    }
-
-    rule1 = {
-        "guid": str(uuid.uuid4()),
-        "rule_name": "cut_sep_left",
-        "rule_info": "der quell string wird beim Trennzeichen (seperator) getrennt. der LINKE Teil wird entfernt, "
-                     "der RECHTE teil wird behalten.",
-        "rule_param_type": "str",
-        "created_by": "Elia"
-    }
-    rule2 = {
-        "guid": str(uuid.uuid4()),
-        "rule_name": "cut_sep_right",
-        "rule_info": "der quell string wird beim Trennzeichen (seperator) getrennt. der RECHTE Teil wird entfernt, "
-                     "der LINKE teil wird behalten.",
-        "rule_param_type": "str",
-        "created_by": "Elia"
-    }
-    """
-    for new_rule in []: #rule1, rule2, rule3
-        write_to_db(connection_string, "rules", new_rule)
-
-
-if __name__ == "__main__":
-    CONN = os.environ["NEON_URL_any"]
-
-    # to reset users tables
-    print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="_")}")
-
-    #test_create_tables()
-    #test_write()
-    #users_db = read_db(connection_string, "users", printout=False)
-    #print(users_db)
