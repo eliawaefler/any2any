@@ -1,9 +1,25 @@
 from openpyxl import load_workbook
 import pandas as pd
 import streamlit as st
+import uuid
+
+def get_bottom_right_position(df):
+    """Returns the 1-based (row, column) position of the bottom-right cell in a DataFrame."""
+    if df.empty:
+        return None  # Handle empty DataFrame
+    return [len(df), len(df.columns)] # 1-based index
 
 
-def transform_2d_to_standard(df, data_start=[1, 1], data_end=[-1, -1]):
+def transform_standard_to_graph(df):
+    node_df = [["guid", "name", "desc"]]
+    rel_df = [["guid", "from", "to", "type"]]
+    rt_df = [["guid", "from", "desc"]]
+    for record in df:
+        print(record)
+    # funktioniert noch nicht.
+    return [node_df, rel_df, rt_df]
+
+def transform_2d_to_standard(df, data_start=[0, 1], data_end=[]):
     """
     Convert a 2D table with named columns into a standardized long format.
 
@@ -13,18 +29,17 @@ def transform_2d_to_standard(df, data_start=[1, 1], data_end=[-1, -1]):
         data_end, the last cell fo the table
     Returns:
         pd.DataFrame: Transformed DataFrame with columns like ['rowid', 'data', 'Name', 'Projekt'].
-        pd.DataFrame: Transformed DataFrame with columns like ['rowid', 'data', 'Name', 'Projekt'].
 
     """
+    if data_end == []:
+        data_end = get_bottom_right_position(df)
+
     df_long = [["og_cell", "value", "X-Dimension", "Y-Dimension"]]
-    for i in range(data_start[0], df.index[data_end[0]]+1):
-        for j in range(data_start[1], df.columns[data_end[1]]+1):
+    for i in range(data_start[0], data_end[0]):
+        for j in range(data_start[1], data_end[1]):
             row = [f"{i}_{j}", df.iloc[i, j], df.iloc[data_start[0]-1, j], df.iloc[i, data_start[1]-1]]
             df_long.append(row)
-
     return pd.DataFrame(df_long)
-
-
 def highlight_headers(df, header_locs, color="yellow"):
     """Highlight the detected headers based on their location."""
     def highlight(row):
@@ -33,8 +48,6 @@ def highlight_headers(df, header_locs, color="yellow"):
             for col_idx in range(len(df.columns))
         ]
     return df.style.apply(highlight, axis=1)
-
-
 def get_headers(uploaded_file):
     if uploaded_file:
         # Read the Excel file and get sheet names
@@ -148,13 +161,10 @@ def extract_entity_attributes(file, structure="other"):
         st.warning("Uploaded file format is not supported. Please upload a CSV or Excel file.")
 
     return entity_details
-
 def execute_gto_transformation(data, mapper, gto):
     pass
-
 def execute_ziel_transformation(data, mapper, ziel):
     pass
-
 def execute_mapper_transformation(data, mapper):
     unique_quell_sheets = []
     for n in range(len(mapper)):
@@ -207,8 +217,6 @@ def execute_mapper_transformation(data, mapper):
         "text/csv",
         key="download_ziel_csv"
     )
-
-
 def execute_transformation_old(data, mapper, ziel):
     ziel_preview = []
     ziel_df = pd.DataFrame(columns=ziel)
@@ -295,3 +303,6 @@ def other_rules():
 
 """
 
+
+if __name__ == '__main__':
+    pass
