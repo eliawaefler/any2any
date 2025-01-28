@@ -1,16 +1,35 @@
-import streamlit as st
-import pandas as pd
 from openpyxl import load_workbook
 import pandas as pd
 import streamlit as st
-from io import BytesIO
-import openpyxl
 
-def highlight_headers(df, header_locs):
+
+def transform_2d_to_standard(df, data_start=[1, 1], data_end=[-1, -1]):
+    """
+    Convert a 2D table with named columns into a standardized long format.
+
+    Parameters:
+        df (pd.DataFrame): Input DataFrame with names as row indices and projects as columns.
+        data_start: the first cell to contain DATA VALUES, not metadata
+        data_end, the last cell fo the table
+    Returns:
+        pd.DataFrame: Transformed DataFrame with columns like ['rowid', 'data', 'Name', 'Projekt'].
+        pd.DataFrame: Transformed DataFrame with columns like ['rowid', 'data', 'Name', 'Projekt'].
+
+    """
+    df_long = [["og_cell", "value", "X-Dimension", "Y-Dimension"]]
+    for i in range(data_start[0], df.index[data_end[0]]+1):
+        for j in range(data_start[1], df.columns[data_end[1]]+1):
+            row = [f"{i}_{j}", df.iloc[i, j], df.iloc[data_start[0]-1, j], df.iloc[i, data_start[1]-1]]
+            df_long.append(row)
+
+    return pd.DataFrame(df_long)
+
+
+def highlight_headers(df, header_locs, color="yellow"):
     """Highlight the detected headers based on their location."""
     def highlight(row):
         return [
-            "background-color: yellow;" if (row.name, col_idx) in header_locs else ""
+            f"background-color: {color};" if (row.name, col_idx) in header_locs else ""
             for col_idx in range(len(df.columns))
         ]
     return df.style.apply(highlight, axis=1)
@@ -71,9 +90,19 @@ def get_headers(uploaded_file):
                 detected_headers[sheet_name] = header_locs
                 detected_header_vals[sheet_name] = header_vals
 
+                if headers_in_col:
+                    highlighted_df = highlight_headers(sheet_df, header_locs, color="orange")
+                    st.write("Uploaded DataFrame:")
+                    st.dataframe(highlighted_df)
+
+                    sheet_df = transform_2d_to_standard(sheet_df, data_start=[header_col+1, header_row+1])
+                    detected_headers[sheet_name] = [(0, 0), (0, 1), (0, 2), (0, 3)]
+                    detected_header_vals[sheet_name] = ["og_cell", "value", "X-Dimension", "Y-Dimension"]
+
+
                 # Highlight headers and display the DataFrame
-                highlighted_df = highlight_headers(sheet_df, header_locs)
-                st.write("Highlighted DataFrame:")
+                highlighted_df = highlight_headers(sheet_df, detected_headers[sheet_name])
+                st.write("transformed DataFrame:")
                 st.dataframe(highlighted_df)
 
         # Button to confirm headers

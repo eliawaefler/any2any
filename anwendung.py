@@ -89,7 +89,6 @@ def display_user_new_file(my_file):
                 st.error("could not add mapper")
     elif new_file_type in ["quelle", "ziel"]:
         file_entities = data_handling.get_headers(my_file)
-
         if file_entities:
             for entity, attributes in file_entities.items():
                 json_attributes = json.dumps(attributes)
