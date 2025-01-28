@@ -390,7 +390,7 @@ def innit_st_page(debug=False):
         with debug5:
             st.write(f"quell_ziel_names: {str(sst.quell_ziel_names)[:20]}")
 def main():
-    innit_st_page(debug=True)
+    innit_st_page(debug=False)
     hauptbereich, rechts, ganz_rechts = st.columns([12, 2, 2])
     if sst.user_logged_in:
         with hauptbereich:
