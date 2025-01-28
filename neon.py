@@ -1,14 +1,14 @@
 import uuid
-
 import psycopg2
 import os
+
 
 def drop_tables_with_pattern(connection_string, pattern="_"):
     """
     Drops all tables in the database that contain a specific pattern (default is '_') in their name.
 
     Parameters:
-        connection_string (str): The database connection string (e.g., in PostgreSQL format).
+        connection_string (str): The database connection string (e.g., in postgresql format).
         pattern (str, optional): The pattern to search for in table names (default is '_').
 
     Returns:
@@ -53,7 +53,7 @@ def create_table(connection_string, table_name, columns):
     Creates a new table in the database if it does not already exist.
 
     Parameters:
-        connection_string (str): The database connection string (e.g., in PostgreSQL format).
+        connection_string (str): The database connection string (e.g., in postgresql format).
         table_name (str): The name of the table to create.
         columns (dict): A dictionary where keys are column names and values are data types.
 
@@ -89,7 +89,7 @@ def write_to_db(connection_string, table, data):
     Inserts data into a specified table in the database.
 
     Parameters:
-        connection_string (str): The database connection string (e.g., in PostgreSQL format).
+        connection_string (str): The database connection string (e.g., in postgresql format).
         table (str): The name of the table where data should be inserted.
         data (dict): A dictionary where keys are column names and values are the respective data to insert.
 
@@ -129,7 +129,7 @@ def read_db(connection_string, table, condition='1=1', printout=False):
     Reads and retrieves data from a specified table in the database based on a condition.
 
     Parameters:
-        connection_string (str): The database connection string (e.g., in PostgreSQL format).
+        connection_string (str): The database connection string (e.g., in postgresql format).
         table (str): The name of the table to read data from.
         condition (str, optional): A SQL condition to filter rows (default is '1=1', which retrieves all rows).
         printout (bool, optional): If True, prints each row to the console (default is False).
@@ -162,7 +162,7 @@ def read_db(connection_string, table, condition='1=1', printout=False):
         print(f"An error occurred: {e}")
         return str(e)
 
-def test_create_tables():
+def test_create_tables(connection_string):
 
     """
     table_name = "users"
@@ -197,7 +197,7 @@ def test_create_tables():
 
     print(create_table(connection_string, table_name, columns))
 
-def test_write():
+def test_write(connection_string):
     """
     new_user = {
         "guid": str(uuid.uuid4()),
@@ -272,18 +272,16 @@ def test_write():
         "created_by": "Elia"
     }
     """
-    for new_rule in [rule1, rule2]:
+    for new_rule in []: #rule1, rule2, rule3
         write_to_db(connection_string, "rules", new_rule)
 
 
-
 if __name__ == "__main__":
-    #CONN_STRING = os.environ["NEON_KEY"] # streamlit secret
-    connection_string = os.environ["NEON_URL_any"] # for local
+    CONN = os.environ["NEON_URL_any"]
 
+    # to reset users tables
+    print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="_")}")
 
-
-    print(f"Dropped tables: {drop_tables_with_pattern(connection_string, pattern="_")}")     # to reset users tables
     #test_create_tables()
     #test_write()
     #users_db = read_db(connection_string, "users", printout=False)

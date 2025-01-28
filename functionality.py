@@ -1,6 +1,6 @@
 
 """
-hier kommen funktionen, die von der ANWENUNG aufgerufen werden.
+hier kommen funktionen, die von der ANWENDUNG aufgerufen werden.
 """
 
 import pandas as pd

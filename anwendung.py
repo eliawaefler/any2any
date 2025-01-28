@@ -47,7 +47,6 @@ def display_welcome():
                             4. Wiederholbar und skalierbar
                             Speichern Sie Ihre Workflows, um Datenprozesse zu automatisieren und skalierbar zu machen.
                             """)
-
 def display_user_fdm():
     quellen = neon.read_db(CONN, f"{sst.username}_quelle")
     mappers = neon.read_db(CONN, f"{sst.username}_mapper")
@@ -133,7 +132,6 @@ def display_user_new_file():
                 this_ziel =  next(item[4] for item in all_ziele if item[3] == selected_ziel)
                 if st.button("EXECUTE"):
                     data_handling.execute_ziel_transformation(new_file, this_mapper, this_ziel)
-
 def display_user_home():
     a, b = st.columns(2)
     with a:
@@ -146,7 +144,6 @@ def display_user_home():
         st.write("or")
         st.write()
         display_user_new_file()
-
 def display_user_new_mapper():
 
     st.subheader("NEW MAPPER")
@@ -269,8 +266,6 @@ def display_user_new_mapper():
                 st.success("mapper saved")
             else:
                 st.error("couldn't save mapper")
-
-
 def display_user_execute():
     st.subheader("EXECUTE")
     uploaded_mapping_table = []  # TEMP
