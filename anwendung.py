@@ -114,7 +114,7 @@ def display_user_new_file(my_file):
         all_mappers = neon.read_db(CONN, f"{sst.username}_mapper")
         all_ziele = neon.read_db(CONN, f"{sst.username}_ziel")
         selected_mapper = st.selectbox("MAPPER: ", options=[m[1] for m in all_mappers])
-        selected_ziel = st.selectbox("ZIEL: ", options=[z[3] for z in all_ziele]+["mapper-defined", "GTO (read only)"])
+        selected_ziel = st.selectbox("ZIEL: ", options=["mapper-defined", "GTO (read only)"]+[z[3] for z in all_ziele])
         this_mapper = json.loads(next(item[2] for item in all_mappers if item[1] == selected_mapper).replace("'", '"'))
         if selected_ziel == "mapper-defined":
             if st.button("EXECUTE"):
@@ -265,9 +265,11 @@ def display_user_new_mapper():
         with b:
             if st.button("add row"):
                 sst.rows += 1
+                st.rerun()
         with c:
             if st.button("remove row"):
                 sst.rows += -1
+                st.rerun()
 
 def display_user_execute():
     st.subheader("EXECUTE")
