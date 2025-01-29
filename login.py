@@ -58,6 +58,12 @@ def verify_user(email_or_username, password_given):
         user = user.iloc[0]
         expected_hash = hash_password(f"{user['salt']}_{password_given}_{user['username']}")
         if user['pw_hash'] == expected_hash:
+            neon.write_to_db(CONN, "log", {
+                'guid': str(uuid.uuid4()),
+                'activity_type': "login",
+                'activity_desc': f"user {email_or_username} logged in",
+                'user_name': user['username'],
+                'sst': ""})
             return [True, user['username']]
 
     return [False, ""]
@@ -126,6 +132,12 @@ def display_signup():
                                     "entity_name": "1",
                                     "entity_attributes": [],
                                     })
+                neon.write_to_db(CONN, "log", {
+                    'guid': str(uuid.uuid4()),
+                    'activity_type': "create user",
+                    'activity_desc': f"created {username}",
+                    'user_name': username,
+                    'sst': ""})
                 st.success(f"Konto für {email} wurde erfolgreich erstellt!")
 
             else:

@@ -95,6 +95,12 @@ def display_user_fdm():
                         if st.button("delete this QUELLE"):
                             table_name = f"{sst.username}_quelle"
                             if table_name in neon.delete_record(CONN, table_name, "file_name", qf):
+                                neon.write_to_db(CONN, "log", {
+                                    'guid': str(uuid.uuid4()),
+                                    'activity_type': "delete rec",
+                                    'activity_desc': f"deleted {qf} FROM {table_name}",
+                                    'user_name': sst.username,
+                                    'sst': ""})
                                 st.success(f"deleted: {qf}")
                                 time.sleep(2)
                                 st.rerun()
@@ -113,9 +119,15 @@ def display_user_new_file(my_file):
     new_file_type = st.selectbox("select file type", options=["quelle", "ziel", "Transferdaten", "mapper"])
     if new_file_type == "mapper":
         if st.button("add to my mappers"):
-            if neon.write_to_db(CONN, f"{sst.username}_mapper",
+            if neon.write_to_db(CONN, f"{sst.username}_{new_file_type}",
                                 {my_file.name: {my_file.read()}}) == "success":
-                st.success("mapper added")
+                if neon.write_to_db(CONN, "log", {
+                    'guid': str(uuid.uuid4()),
+                    'activity_type': "safe file",
+                    'activity_desc': f"saved {new_file_type} named {my_file.name} TO {sst.username}_{new_file_type}",
+                    'user_name': sst.username,
+                    'sst': ""}) == "success":
+                    st.success("mapper added")
                 st.rerun()
             else:
                 st.error("could not add mapper")
@@ -131,7 +143,13 @@ def display_user_new_file(my_file):
                         "entity_attributes": json_attributes
                         }
                 if neon.write_to_db(CONN, f"{sst.username}_{new_file_type}", data) == "success":
-                    st.success(f"saved  {my_file.name} // {entity}")
+                    if neon.write_to_db(CONN, "log", {
+                        'guid': str(uuid.uuid4()),
+                        'activity_type': "safe file",
+                        'activity_desc': f"saved {new_file_type} named {my_file.name} TO {sst.username}_{new_file_type}",
+                        'user_name': sst.username,
+                        'sst': ""}) == "success":
+                        st.success(f"saved  {my_file.name} // {entity}")
                 else:
                     st.error(f"could not add {new_file_type}")
                     time.sleep(3)
@@ -149,7 +167,42 @@ def display_user_new_file(my_file):
         this_mapper = json.loads(next(item[2] for item in all_mappers if item[1] == selected_mapper).replace("'", '"'))
         if selected_ziel == "mapper-defined":
             if st.button("EXECUTE"):
-                data_handling.execute_mapper_transformation(my_file, this_mapper)
+                if neon.write_to_db(CONN, "log", {
+                    'guid': str(uuid.uuid4()),
+                    'activity_type': "start transformation",
+                    'activity_desc': f"started m={selected_mapper} with z={selected_ziel} with d={my_file.name}",
+                    'user_name': sst.username,
+                    'sst': ""}) == "success":
+                    pass
+                transformation, new_df = data_handling.execute_mapper_transformation(my_file, this_mapper)
+
+                if transformation:
+                    neon.write_to_db(CONN, "log", {
+                        'guid': str(uuid.uuid4()),
+                        'activity_type': "end transformation",
+                        'activity_desc': f"success",
+                        'user_name': sst.username,
+                        'sst': ""})
+                    st.subheader("ZIEL Preview")
+                    st.dataframe(new_df)
+                    # Provide a download option for the transformed ZIEL
+                    ziel_csv = new_df.to_csv(index=False)
+                    st.download_button(
+                        "Download Transformed ZIEL",
+                        ziel_csv,
+                        "transformed_ziel.csv",
+                        "text/csv",
+                        key="download_ziel_csv"
+                    )
+                else:
+                    st.error(new_df)
+                    neon.write_to_db(CONN, "log", {
+                        'guid': str(uuid.uuid4()),
+                        'activity_type': "error",
+                        'activity_desc': f"transformation raised {new_df}",
+                        'user_name': sst.username,
+                        'sst': ""})
+
         elif selected_ziel == "GTO (read everything)":
             #add logic
             this_ziel = [] #pull FDM
@@ -291,7 +344,13 @@ def display_user_new_mapper():
                         "name": sst.mapper_name,
                         "data": str(sst.mapping_table)}
                 if neon.write_to_db(CONN, f"{sst.username}_mapper", data) == "success":
-                    st.success("mapper saved")
+                    if neon.write_to_db(CONN, "log", {
+                        'guid': str(uuid.uuid4()),
+                        'activity_type': "safe mapper",
+                        'activity_desc': f"saved {sst.mapper_name} TO {sst.username}_mapper",
+                        'user_name': sst.username,
+                        'sst': ""}) == "success":
+                        st.success("mapper saved")
                 else:
                     st.error("couldn't save mapper")
         with b:
@@ -426,7 +485,7 @@ def innit_st_page(debug=False):
         with debug5:
             st.write(f"quell_ziel_names: {str(sst.quell_ziel_names)[:20]}")
 def main():
-    innit_st_page(debug=False)
+    innit_st_page(debug=True)
 
     #display_square()
     hauptbereich, rechts, ganz_rechts = st.columns([12, 2, 2])
@@ -451,7 +510,9 @@ def main():
         elif sst.page == "user_create_mapper":
             display_user_new_mapper()
         elif sst.page == "user_execute":
-            display_user_execute()
+            # not in use ??
+            # display_user_execute()
+            pass
     else: # not LOGGED IN
         with hauptbereich:
             st.title(f"any2any")

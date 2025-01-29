@@ -1,7 +1,7 @@
 from openpyxl import load_workbook
 import pandas as pd
 import streamlit as st
-import uuid
+
 
 def get_bottom_right_position(df):
     """Returns the 1-based (row, column) position of the bottom-right cell in a DataFrame."""
@@ -176,47 +176,41 @@ def execute_mapper_transformation(data, mapper):
     ziel_df = pd.DataFrame()
 
     for entry in mapper:
-        quelle_sheet = entry['Quelle_Sheet']
-        quelle_column = entry['Quelle_Column']
-        transformation_rule = entry['Transformation_Rule']
-        transformation_param = entry['Transformation_Rule_param']
-        ziel_sheet = entry['Ziel_Sheet']
-        ziel_column = entry['Ziel_Column']
+        try:
+            quelle_sheet = entry['Quelle_Sheet']
+            quelle_column = entry['Quelle_Column']
+            transformation_rule = entry['Transformation_Rule']
+            transformation_param = entry['Transformation_Rule_param']
+            ziel_sheet = entry['Ziel_Sheet']
+            ziel_column = entry['Ziel_Column']
 
-        # Get the relevant source DataFrame
-        source_df = quelle_df[quelle_sheet]
+            # Get the relevant source DataFrame
+            source_df = quelle_df[quelle_sheet]
 
-        # Perform the transformation based on the rule
-        if transformation_rule == '1:1':
-            ziel_df[ziel_column] = source_df[quelle_column]
-        elif transformation_rule == 'multiply':
-            ziel_df[ziel_column] = source_df[quelle_column] * float(transformation_param)
-        elif transformation_rule == "cut_left":
-            ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
-        elif transformation_rule == "cut_sep_right":
-            # LINKS RECHTS LOGIK FEHLT
-            ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
-        elif transformation_rule == "cut_sep_left":
-            ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
-        elif transformation_rule == "cut_right":
-            ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
-        elif transformation_rule == "concat":
-            order = [int(i) for i in transformation_param.split(",")]
-            ziel_df[ziel_column] = source_df.iloc[:, order].apply(lambda x: "".join(x.astype(str)), axis=1)
-        elif transformation_rule == "add":
-            ziel_df[ziel_column] = source_df[quelle_column] + float(transformation_param)
+            # Perform the transformation based on the rule
+            if transformation_rule == '1:1':
+                ziel_df[ziel_column] = source_df[quelle_column]
+            elif transformation_rule == 'multiply':
+                ziel_df[ziel_column] = source_df[quelle_column] * float(transformation_param)
+            elif transformation_rule == "cut_left":
+                ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
+            elif transformation_rule == "cut_sep_right":
+                # LINKS RECHTS LOGIK FEHLT
+                ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
+            elif transformation_rule == "cut_sep_left":
+                ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
+            elif transformation_rule == "cut_right":
+                ziel_df[ziel_column] = source_df[quelle_column].str.split(transformation_param, expand=True)
+            elif transformation_rule == "concat":
+                order = [int(i) for i in transformation_param.split(",")]
+                ziel_df[ziel_column] = source_df.iloc[:, order].apply(lambda x: "".join(x.astype(str)), axis=1)
+            elif transformation_rule == "add":
+                ziel_df[ziel_column] = source_df[quelle_column] + float(transformation_param)
+        except Exception as e:
+            return [False, e]
+    return [True, ziel_df]
 
-    st.subheader("ZIEL Preview")
-    st.dataframe(ziel_df)
-    # Provide a download option for the transformed ZIEL
-    ziel_csv = ziel_df.to_csv(index=False)
-    st.download_button(
-        "Download Transformed ZIEL",
-        ziel_csv,
-        "transformed_ziel.csv",
-        "text/csv",
-        key="download_ziel_csv"
-    )
+
 def execute_transformation_old(data, mapper, ziel):
     ziel_preview = []
     ziel_df = pd.DataFrame(columns=ziel)

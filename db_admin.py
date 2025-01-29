@@ -15,6 +15,19 @@ def create_empty_rules_table():
     }
     print(create_table(CONN, table_name, columns))
 
+def create_empty_log_table():
+    table_name = "log"
+    columns = {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "activity_type": "VARCHAR(1000)",
+        "activity_desc": "VARCHAR(1000)",
+        "user_name": "VARCHAR(1000)",
+        "sst": "VARCHAR(1000)",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+    }
+    print(create_table(CONN, table_name, columns))
+
+
 def create_empty_users_table():
     table_name = "users"
     columns = {
@@ -164,9 +177,9 @@ def add_rules():
 
 if __name__ == "__main__":
     CONN = os.environ["NEON_URL_any"]
-
+    create_empty_log_table()
     # to DROP ALL users tables
-    print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="eliainsel_")}")
+    #print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="eliainsel_")}")
     #any2any_users_reset()
     #users_db = read_db(CONN, "users", printout=False)
     #print(users_db)
