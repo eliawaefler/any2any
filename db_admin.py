@@ -166,7 +166,7 @@ if __name__ == "__main__":
     CONN = os.environ["NEON_URL_any"]
 
     # to DROP ALL users tables
-    #print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="_")}")
+    print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="eliainsel_")}")
     #any2any_users_reset()
     #users_db = read_db(CONN, "users", printout=False)
     #print(users_db)
