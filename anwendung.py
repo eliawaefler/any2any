@@ -167,6 +167,7 @@ def display_user_home():
     with b:
         if st.button("Create new Mapper"):
             sst.page = "user_create_mapper"
+            sst.quell_ziel_names = ["", ""]
             st.rerun()
         st.write()
         st.write("or")
@@ -399,7 +400,7 @@ def innit_st_page(debug=False):
     if "sel_rule_p" not in sst:
         sst.sel_rule_p = []
     if "quell_ziel_names" not in sst:
-        sst.quell_ziel_names = []
+        sst.quell_ziel_names = ["", ""]
 
     if "square" not in sst:
         sst.square = [500, 300, 100, "0.3"]
