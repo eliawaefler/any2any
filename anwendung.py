@@ -33,15 +33,15 @@ def display_welcome():
     with left:
         st.markdown("""
                             ###   Das Problem
-                            Die Welt ist voller Daten, aber oft sind diese unstrukturiert, schwer zugänglich oder in Formaten, die nicht kompatibel sind. Unternehmen kämpfen mit ineffizienten Prozessen, Daten-Silos und der mangelnden Fähigkeit, Informationen effektiv zu nutzen. Dies führt zu verpassten Chancen, unnötigen Kosten und langsamer Entscheidungsfindung.    
+                            Die Welt ist voller Daten, aber oft sind diese unstrukturiert, schwer zugänglich oder in Formaten, die nicht kompatibel sind. Unternehmen kämpfen mit ineffizienten Prozessen, Daten-Silos und der mangelnden Fähigkeit, Informationen effektiv zu nutzen.    
                     """)
         st.markdown("""
                             ###   Unsere Lösung
-                            Mit any2any revolutionieren wir die Art und Weise, wie Daten transformiert und genutzt werden. Unsere Plattform vereinfacht komplexe Datenumwandlungen, ermöglicht nahtlose Integration und schafft ein Ökosystem, in dem Datenflüsse effizienter und transparenter werden. Ob Excel zu JSON, BIM-Daten zu FM-Systemen oder benutzerdefinierte Transformationen – any2any bietet die Werkzeuge, die Sie brauchen, um Daten sinnvoll und gewinnbringend einzusetzen.
+                            any2any werden Daten einfach transformiert und visualisiert. Unsere Plattform vereinfacht komplexe Datenumwandlungen, ermöglicht nahtlose Integration und schafft ein Ökosystem, in dem Datenflüsse effizienter und transparenter werden.
                     """)
         st.markdown("""
-                            ###   Treten Sie unserer Bewegung bei
-                            Schließen Sie sich der any2any-Community an und werden Sie Teil einer Datenrevolution. Gemeinsam gestalten wir eine Zukunft, in der Daten nicht mehr im Weg stehen, sondern den Weg ebnen – für Innovation, Wachstum und Erfolg. Starten Sie heute und erleben Sie die Power von grenzenloser Datenflexibilität.
+                            ###   Jetzt starten
+                            Gewinnen Sie die Kontrolle über Ihre Daten zurück!
                    
                             """)
         if st.button("Registrieren"):
