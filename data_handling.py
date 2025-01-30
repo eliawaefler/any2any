@@ -1,6 +1,8 @@
+from anyio import value
 from openpyxl import load_workbook
 import pandas as pd
 import streamlit as st
+from pygments.lexer import default
 
 
 def get_bottom_right_position(df):
@@ -19,27 +21,35 @@ def transform_standard_to_graph(df):
     # funktioniert noch nicht.
     return [node_df, rel_df, rt_df]
 
-def transform_2d_to_standard(df, data_start=[0, 1], data_end=[]):
+
+def transform_2d_to_standard(df, header_names=None, data_start=None, data_end=None):
     """
     Convert a 2D table with named columns into a standardized long format.
 
     Parameters:
         df (pd.DataFrame): Input DataFrame with names as row indices and projects as columns.
+        header_names: the names of the first row (metadata)
         data_start: the first cell to contain DATA VALUES, not metadata
         data_end, the last cell fo the table
     Returns:
         pd.DataFrame: Transformed DataFrame with columns like ['rowid', 'data', 'Name', 'Projekt'].
 
     """
-    if data_end == []:
+    if header_names is None:
+        header_names=["og_cell", "value", "X-Dimension", "Y-Dimension"]
+    if data_start is None:
+        data_start = [0, 1]
+    if data_end is None:
         data_end = get_bottom_right_position(df)
 
-    df_long = [["og_cell", "value", "X-Dimension", "Y-Dimension"]]
+    df_long = [header_names]
     for i in range(data_start[0], data_end[0]):
         for j in range(data_start[1], data_end[1]):
             row = [f"{i}_{j}", df.iloc[i, j], df.iloc[data_start[0]-1, j], df.iloc[i, data_start[1]-1]]
             df_long.append(row)
     return pd.DataFrame(df_long)
+
+
 def highlight_headers(df, header_locs, color="yellow"):
     """Highlight the detected headers based on their location."""
     def highlight(row):
@@ -48,6 +58,8 @@ def highlight_headers(df, header_locs, color="yellow"):
             for col_idx in range(len(df.columns))
         ]
     return df.style.apply(highlight, axis=1)
+
+
 def get_headers(uploaded_file):
     if uploaded_file:
         # Read the Excel file and get sheet names
@@ -63,55 +75,95 @@ def get_headers(uploaded_file):
         for i, sheet_name in enumerate(sheet_names):
             with tabs[i]:
                 st.subheader(f"Sheet: {sheet_name}")
-
-                # Read the sheet as a DataFrame
                 sheet_df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None)
-
-                # Allow user to select the header row
-                max_rows = min(len(sheet_df), 10)
-                header_row = st.selectbox(
-                    f"Select the header row for {sheet_name}",
-                    options=list(range(max_rows)),
-                    index=0,
-                    key=f"header_row_{sheet_name}"
-                )
-
-                # Allow user to select if there is a header column (2D table)
-                headers_in_row = st.toggle(f"Does {sheet_name} contain headers in a row?", key=f"headers_in_row_{sheet_name}", value=True)
-                headers_in_col = st.toggle(f"Does {sheet_name} contain headers in a column?", key=f"headers_in_col_{sheet_name}")
-
+                headers_in_row = st.toggle(f"{sheet_name} contains headers in a row",
+                                           key=f"headers_in_row_{sheet_name}", value=True)
+                headers_in_col = st.toggle(f"{sheet_name} contains headers in a column",
+                                           key=f"headers_in_col_{sheet_name}")
+                multiple_entities = st.toggle(f"{sheet_name} contains multiple entities",
+                                              key=f"multiple_entities_in_{sheet_name}")
                 # Extract header locations based on user input
                 header_locs = []
                 header_vals = []
-                if headers_in_col:
-                    # Allow user to select the header row
-                    max_cols = min(len(sheet_df), 10)
-                    header_col = st.selectbox(
-                        f"Select the header col for {sheet_name}",
-                        options=list(range(max_cols)),
-                        index=0,
-                        key=f"header_col_{sheet_name}"
-                    )
-                    for row in range(len(list(sheet_df.iterrows()))):
-                        header_locs.append((row, header_col))
-
-                if headers_in_row:
-                    for col in range(len(sheet_df.columns)):
-                        header_locs.append((header_row, col))
-                        header_vals.append(sheet_df.iloc[header_row, col])
-
-                detected_headers[sheet_name] = header_locs
-                detected_header_vals[sheet_name] = header_vals
 
                 if headers_in_col:
-                    highlighted_df = highlight_headers(sheet_df, header_locs, color="orange")
+
+                    if headers_in_row:
+                        st.warning("work in progress")
+                        n_dim = 2
+                        more_dimensions = st.toggle(f"{sheet_name} contains more than two dimensions",
+                                                    key=f"more_dimensions_in_{sheet_name}")
+                        dimensions = {"names": {"1": "X-Dimension", "2": "Y-Dimension"},
+                                      "in_row": {"1": True, "2": False},
+                                      "loc": {"1": 1, "2": 1}}
+                        data_x = dimensions["loc"]["1"]
+                        data_y = dimensions["loc"]["2"]
+                        if more_dimensions:
+                            n_dim = st.slider("nb of dims", min_value=3, max_value=10, key=f"dim_{sheet_name}")
+                            data_x = st.selectbox(f"Select the start col for the data of {sheet_name}",
+                                                  options=list(range(min(len(sheet_df), 10))),
+                                                  index=0, key=f"data_x_{sheet_name}")
+                            data_y = st.selectbox(f"Select the start row for the data of {sheet_name}",
+                                                  options=list(range(min(len(sheet_df), 10))),
+                                                  index=0, key=f"data_y_{sheet_name}")
+
+                        for n in range(1, n_dim+1):
+                            a, b, c, d = st.columns([2, 1, 1, 2])
+                            with a:
+                                dimensions["names"][str(n)] = st.text_input(f"Name Dimension {n}",
+                                                                            key=f"name_{n}_{sheet_name}")
+                            with b:
+                                st.write("")
+                                dimensions["in_row"][str(n)] = st.toggle(f"Dimension {n} in a row",
+                                                                        key=f"headers_in_row_dim{n}_{sheet_name}")
+                            with c:
+                                dimensions["loc"][str(n)] = st.selectbox(f"Select the header col for dim {n} of {sheet_name}",
+                                                                            options=list(range(min(len(sheet_df), 10))),
+                                                                            index=0, key=f"header_dim_{n}_col_{sheet_name}")
+
+                        uploaded_df = sheet_df
+                        detected_headers[sheet_name] = [(0, 0), (0, 1)] + [(0, _) for _ in list(range(2, n_dim+2))]
+                        detected_header_vals[sheet_name] = ["og_cell", "value"] + list(dimensions["names"].values())
+                        sheet_df = transform_2d_to_standard(sheet_df, header_names=detected_header_vals[sheet_name],
+                                                            data_start=[data_x, data_y])
+                        header_locs = detected_headers[sheet_name]
+                    else:
+
+                        header_col = st.selectbox(
+                            f"Select the header col for {sheet_name}",
+                            options=list(range(min(len(sheet_df), 10))),
+                            index=0, key=f"header_col_{sheet_name}")
+
+                        for row in range(len(list(sheet_df.iterrows()))):
+                            header_locs.append((row, header_col))
+                            header_vals.append(sheet_df.iloc[row, header_col])
+
+                        uploaded_df = sheet_df
+                        sheet_df = sheet_df.T
+                        detected_headers[sheet_name] = [(b, a) for a, b in header_locs]
+                        detected_header_vals[sheet_name] = header_vals
+
+                    highlighted_df = highlight_headers(uploaded_df, header_locs, color="orange")
                     st.write("Uploaded DataFrame:")
                     st.dataframe(highlighted_df)
 
-                    sheet_df = transform_2d_to_standard(sheet_df, data_start=[header_col+1, header_row+1])
-                    detected_headers[sheet_name] = [(0, 0), (0, 1), (0, 2), (0, 3)]
-                    detected_header_vals[sheet_name] = ["og_cell", "value", "X-Dimension", "Y-Dimension"]
+                if not headers_in_col:
 
+                    if headers_in_row:
+
+                        header_row = st.selectbox(
+                            f"Select the header row for {sheet_name}",
+                            options=list(range(min(len(sheet_df), 10))),
+                            index=0, key=f"header_row_{sheet_name}")
+                        for col in range(len(sheet_df.columns)):
+                            header_locs.append((header_row, col))
+                            header_vals.append(sheet_df.iloc[header_row, col])
+
+                    else:
+                        st.error("no headers found, please upload another file")
+
+                    detected_headers[sheet_name] = header_locs
+                    detected_header_vals[sheet_name] = header_vals
 
                 # Highlight headers and display the DataFrame
                 highlighted_df = highlight_headers(sheet_df, detected_headers[sheet_name])
@@ -121,6 +173,7 @@ def get_headers(uploaded_file):
         # Button to confirm headers
         if st.button("Confirm Headers for all sheets"):
             return detected_header_vals
+
 
 # Function to extract entity names and attribute names
 def extract_entity_attributes(file, structure="other"):
@@ -161,10 +214,16 @@ def extract_entity_attributes(file, structure="other"):
         st.warning("Uploaded file format is not supported. Please upload a CSV or Excel file.")
 
     return entity_details
+
+
 def execute_gto_transformation(data, mapper, gto):
     pass
+
+
 def execute_ziel_transformation(data, mapper, ziel):
     pass
+
+
 def execute_mapper_transformation(data, mapper):
     unique_quell_sheets = []
     for n in range(len(mapper)):
