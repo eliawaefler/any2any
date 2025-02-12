@@ -716,7 +716,6 @@ def main():
                 sst.page = "user_home"
                 st.rerun()
         elif sst.page == "pw-reset":
-            reset_sst()
             with ganz_rechts:
                 if st.button("login"):
                     sst.page = "login"
