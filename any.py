@@ -1,30 +1,195 @@
+
+"""
+Streamlit frontend für any2any
+"""
+
 import os
 import time
 import uuid
 import streamlit as st
 import pandas as pd
-import neon
-import login
-import data_handling
+from utils import neon
+from backend import any2any_backend
+from backend import neon_login
 import json
 
-def display_square():
-    x, y, z, o = sst.square
-    # Add a colored square
-    st.markdown(
-        f"""
-        <div style="
-            position:absolute; 
-            top: {x}px; 
-            left:{y}px; 
-            width:{z}px; 
-            height:{z}px; 
-            background-color:rgba(255, 0, 0, {o}); 
-            margin:0;">
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+
+def create_user_tables(user_n):
+    neon.create_table(CONN, f"{user_n}_Mapper", {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "name": "VARCHAR(1000)",
+        "data": "VARCHAR(1000000)"
+    })
+    neon.create_table(CONN, f"{user_n}_Quelle", {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "API": "VARCHAR(255) NOT NULL",
+        "file_name": "VARCHAR(255) NOT NULL",
+        "entity_name": "VARCHAR(255) NOT NULL",
+        "entity_attributes": "JSONB NOT NULL",
+        "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+    })
+    neon.create_table(CONN, f"{user_n}_Ziel", {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "API": "VARCHAR(255) NOT NULL",
+        "file_name": "VARCHAR(255) NOT NULL",
+        "entity_name": "VARCHAR(255) NOT NULL",
+        "entity_attributes": "JSONB NOT NULL",
+        "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+    })
+    neon.create_table(CONN, f"{user_n}_FDM", {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "entity_name": "VARCHAR(255) NOT NULL",  #
+        "attributes": "JSONB NOT NULL",
+        "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+    })
+    neon.write_to_db(CONN, f"{user_n}_FDM", {
+        "guid": str(uuid.uuid4()),  # Unique identifier
+        "entity_name": "1",
+        "entity_attributes": [],
+    })
+    neon.write_to_db(CONN, "log", {
+        'guid': str(uuid.uuid4()),
+        'activity_type': "create user",
+        'activity_desc': f"created {user_n}",
+        'user_name': user_n,
+        'sst': ""})
+    return True
+
+
+def get_headers(uploaded_file):
+    if uploaded_file:
+        excel_data = pd.ExcelFile(uploaded_file)
+        sheet_names = excel_data.sheet_names
+
+        tf_detected_headers = {}
+        og_detected_headers = {}
+        detected_header_vals = {}
+
+        tabs = st.tabs(sheet_names)
+        for i, sheet_name in enumerate(sheet_names):
+            with tabs[i]:
+                st.subheader(f"Sheet: {sheet_name}") #
+                original_sheet_df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None)
+                headers_in_row = st.toggle(f"{sheet_name} contains headers in a row",
+                                           key=f"headers_in_row_{sheet_name}", value=True)
+                headers_in_col = st.toggle(f"{sheet_name} contains headers in a column",
+                                           key=f"headers_in_col_{sheet_name}")
+                more_dimensions = st.toggle(f"{sheet_name} contains more than two dimensions",
+                                            key=f"more_dimensions_in_{sheet_name}")
+                more_entities = st.toggle(f"{sheet_name} contains more than ONE ENTITY",
+                                            key=f"more_ENTITIES_in_{sheet_name}")
+                if more_entities:
+                    st.write("this feature is not yet implemented, please clean your excel files")
+                    """
+                                     a, b, c = st.columns([1, 1, 4])
+                                     with a:
+                                         data_y = st.number_input(f"Start column for data in {sheet_name}",
+                                                                  min_value=0, max_value=len(original_sheet_df.columns)-1, value=0)
+                                     with b:
+                                         data_x = st.number_input(f"Start row for data in {sheet_name}",
+                                                                  min_value=0, max_value=len(original_sheet_df)-1, value=0)
+                                     """
+                header_locations = []
+                header_vals = []
+                colors = ["yellow", "lightblue", "light green", "light coral"]
+
+                # 2d case
+                if headers_in_col and headers_in_row:
+                    dimensions = {}
+
+                    n_dim = 2
+                    if more_dimensions:
+                        n_dim = int(st.slider(f"Number of dimensions for {sheet_name}", 3, 10))
+
+                    #highlights = [("blue", (int(data_x-1), int(data_y-1)))]
+                    for n in range(n_dim):
+                        dim_start = [0, 0]
+                        dim_end = [0, 1]
+                        a, b, c, d, e, f = st.columns([2, 1, 1, 1, 1, 6])
+                        with a:
+                            dim_name = st.text_input(f"Name of Dimension {n}", key=f"dim_name_{n}_{sheet_name}", value="DimensionX")
+                        with b:
+                            dim_start[0] = int(st.number_input(f"Start row for Dimension {n}", key=f"start_row_{n}_{sheet_name}", step=1, value=0))
+                        with c:
+                            dim_start[1] = int(st.number_input(f"Start col for Dimension {n}", key=f"start_col_{n}_{sheet_name}", step=1, value=1))
+                        with d:
+                            dim_end[0] = int(st.number_input(f"End row for Dimension {n}", key=f"end_row_{n}_{sheet_name}", step=1, value=0))
+                        with e:
+                            dim_end[1] = int(st.number_input(f"End col for Dimension {n}", key=f"end_col_{n}_{sheet_name}", step=1, value=5))
+
+                        list_of_cells = any2any_backend.get_cells_in_range(dim_start, dim_end)
+                        #highlights.append((colors[n % len(colors)], list_of_cells))
+
+                        dimensions[dim_name] = list_of_cells
+                        for e in list_of_cells:
+                            header_locations.append(e)
+                    header_locations = list(set(header_locations))
+
+                    #tf_detected_headers[sheet_name] = [(0, 0), (0, 1)] + [(0, _) for _ in range(2, n_dim+2)]
+                    tf_detected_headers[sheet_name] = header_locations
+                    og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
+                    detected_header_vals[sheet_name] = [original_sheet_df.iloc[h_loc] for h_loc in header_locations]
+                    transformed_df = any2any_backend.standardize_dataframe(original_sheet_df, dimensions)
+
+                # transpose
+                elif headers_in_col and not headers_in_row:
+                    header_col = st.selectbox(f"Select header column for {sheet_name}",
+                                              options=list(range(len(original_sheet_df.columns))),
+                                              index=0, key=f"header_col_{sheet_name}")
+
+                    header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
+                                                 options=list(range(10)), index=0,
+                                                 key=f"header_offset_{sheet_name}")
+
+                    for row in range(header_offset, len(original_sheet_df)):
+                        header_locations.append((row, header_col))
+                        header_vals.append(original_sheet_df.iloc[row, header_col])
+
+                    transformed_df = original_sheet_df.T
+                    tf_detected_headers[sheet_name] = [(b, a) for a, b in header_locations]
+                    detected_header_vals[sheet_name] = header_vals
+                    og_detected_headers[sheet_name] = header_locations
+
+
+                # basic case
+                elif headers_in_row and not headers_in_col:
+                    header_row = st.selectbox(f"Select header row for {sheet_name}",
+                                              options=list(range(len(original_sheet_df))),
+                                              index=0, key=f"header_row_{sheet_name}")
+
+                    header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
+                                                 options=list(range(10)), index=0,
+                                                 key=f"header_offset_{sheet_name}")
+
+                    for col in range(header_offset, len(original_sheet_df.columns)):
+                        header_locations.append((header_row, col))
+                        header_vals.append(original_sheet_df.iloc[header_row, col])
+
+                    tf_detected_headers[sheet_name] = header_locations
+                    detected_header_vals[sheet_name] = header_vals
+                    transformed_df = original_sheet_df
+                    og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
+
+
+                # no headers case
+                else:
+                    st.error("No headers detected. Please upload another file.")
+                    tf_detected_headers[sheet_name] = [(0, 0)]
+                    transformed_df = original_sheet_df
+                    og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
+
+
+                if str(transformed_df) != str(original_sheet_df):
+                    st.write("uploaded DataFrame:")
+                    st.dataframe(any2any_backend.highlight_multiple_cells(original_sheet_df, og_detected_headers[sheet_name]))
+                st.write("Dataframe with detected headers:")
+                st.dataframe(any2any_backend.highlight_multiple_cells(transformed_df, tf_detected_headers[sheet_name]))
+
+
+        if st.button("Confirm Headers for all sheets"):
+            return detected_header_vals
+
+
 def display_welcome():
 
     st.write("transforming data since 2025")
@@ -63,6 +228,8 @@ def display_welcome():
                             4. Wiederholbar und skalierbar
                             Speichern Sie Ihre Workflows, um Datenprozesse zu automatisieren und skalierbar zu machen.
                             """)
+
+
 def display_user_fdm():
     quellen = neon.read_db(CONN, f"{sst.username}_quelle")
     mappers = neon.read_db(CONN, f"{sst.username}_mapper")
@@ -80,7 +247,7 @@ def display_user_fdm():
         st.write("")
 
         st.subheader("MY FDM")
-        quell, map, ziel = st.columns(3)
+        quell, mapping_route, ziel = st.columns(3)
 
         with quell:
             st.subheader(":potable_water:")
@@ -107,7 +274,7 @@ def display_user_fdm():
                             else:
                                 st.error("something went wrong")
 
-        with map:
+        with mapping_route:
             st.subheader(":twisted_rightwards_arrows:")
             for m in mappers:
                 st.write(m[1])
@@ -115,6 +282,8 @@ def display_user_fdm():
             st.subheader(":dart:")
             for z in ziele:
                 st.write(f"{z[2]}_{z[3]}")
+
+
 def display_user_new_file(my_file):
     new_file_type = st.selectbox("select file type", options=["quelle", "ziel", "Transferdaten", "mapper"])
     if new_file_type == "mapper":
@@ -132,7 +301,7 @@ def display_user_new_file(my_file):
             else:
                 st.error("could not add mapper")
     elif new_file_type in ["quelle", "ziel"]:
-        file_entities = data_handling.get_headers(my_file)
+        file_entities = get_headers(my_file)
         if file_entities:
             for entity, attributes in file_entities.items():
                 json_attributes = json.dumps(attributes)
@@ -174,7 +343,7 @@ def display_user_new_file(my_file):
                     'user_name': sst.username,
                     'sst': ""}) == "success":
                     pass
-                transformation, new_df = data_handling.execute_mapper_transformation(my_file, this_mapper)
+                transformation, new_df = any2any_backend.execute_mapper_transformation(my_file, this_mapper)
 
                 if transformation:
                     neon.write_to_db(CONN, "log", {
@@ -207,14 +376,15 @@ def display_user_new_file(my_file):
             #add logic
             this_ziel = [] #pull FDM
             if st.button("EXECUTE"):
-                data_handling.execute_gto_transformation(my_file, this_mapper, this_ziel)
+                any2any_backend.execute_gto_transformation(my_file, this_mapper, this_ziel)
         else:
             this_ziel =  next(item[4] for item in all_ziele if item[3] == selected_ziel)
             if st.button("EXECUTE"):
-                data_handling.execute_ziel_transformation(my_file, this_mapper, this_ziel)
+                any2any_backend.execute_ziel_transformation(my_file, this_mapper, this_ziel)
+
+
 def display_user_home():
     a, b = st.columns(2)
-    new_file = False
     with a:
         display_user_fdm()
     with b:
@@ -228,6 +398,8 @@ def display_user_home():
         new_file = st.file_uploader("upload new file")
     if new_file:
         display_user_new_file(new_file)
+
+
 def display_user_new_mapper():
     st.subheader("NEW MAPPER")
     rules = neon.read_db(CONN, "rules")
@@ -361,6 +533,8 @@ def display_user_new_mapper():
             if st.button("remove row"):
                 sst.rows += -1
                 st.rerun()
+
+
 def display_user_execute():
     st.subheader("EXECUTE")
     uploaded_mapping_table = []  # TEMP
@@ -371,29 +545,29 @@ def display_user_execute():
 
     for mapping in uploaded_mapping_table:
         quelle_df = pd.read_excel(uploaded_quelle, sheet_name=mapping[0])
-    ziel_df = pd.read_excel(uploaded_ziel, sheet_name=mapping[6])
+        ziel_df = pd.read_excel(uploaded_ziel, sheet_name=mapping[6])
 
-    quelle_column = mapping["Quelle_Column"]
-    ziel_column = mapping["Ziel_Column"]
-    rule = mapping["Transformation_Rule"]
-    rule_param = mapping["Transformation_Rule_param"]
+        quelle_column = mapping["Quelle_Column"]
+        ziel_column = mapping["Ziel_Column"]
+        rule = mapping["Transformation_Rule"]
+        rule_param = mapping["Transformation_Rule_param"]
 
-    if rule == "1:1":
-        ziel_df[ziel_column] = quelle_df[quelle_column]
-    elif rule == "split":
-        sep = rule_param
-        ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
-    elif rule == "concat":
-        order = [int(i) for i in rule_param.split(",")]
-        ziel_df[ziel_column] = quelle_df.iloc[:, order].apply(lambda x: "".join(x.astype(str)), axis=1)
-    elif rule == "divide":
-        ziel_df[ziel_column] = quelle_df[quelle_column] / float(rule_param)
-    elif rule == "multiply":
-        ziel_df[ziel_column] = quelle_df[quelle_column] * float(rule_param)
-    elif rule == "add":
-        ziel_df[ziel_column] = quelle_df[quelle_column] + float(rule_param)
+        if rule == "1:1":
+            ziel_df[ziel_column] = quelle_df[quelle_column]
+        elif rule == "split":
+            sep = rule_param
+            ziel_df[[ziel_column, f"{ziel_column}_extra"]] = quelle_df[quelle_column].str.split(sep, expand=True)
+        elif rule == "concat":
+            order = [int(i) for i in rule_param.split(",")]
+            ziel_df[ziel_column] = quelle_df.iloc[:, order].apply(lambda x: "".join(x.astype(str)), axis=1)
+        elif rule == "divide":
+            ziel_df[ziel_column] = quelle_df[quelle_column] / float(rule_param)
+        elif rule == "multiply":
+            ziel_df[ziel_column] = quelle_df[quelle_column] * float(rule_param)
+        elif rule == "add":
+            ziel_df[ziel_column] = quelle_df[quelle_column] + float(rule_param)
 
-    ziel_preview.append(ziel_df)
+        ziel_preview.append(ziel_df)
 
     # Combine and display the preview of ZIEL
     combined_preview = pd.concat(ziel_preview)
@@ -409,6 +583,8 @@ def display_user_execute():
         "text/csv",
         key="download_ziel_csv"
     )
+
+
 def reset_sst():
     sst.sel_rule_p = []
     sst.sel_rule = []
@@ -421,6 +597,8 @@ def reset_sst():
     sst.quell_cols = {}
     sst.ziel_cols = {}
     sst.rows = 0
+
+
 def innit_st_page(debug=False):
     st.set_page_config(
         page_title="any2any",  #:cyclone::hammer_and_pick::recycle:
@@ -484,6 +662,8 @@ def innit_st_page(debug=False):
             st.write(f"sel_rule: {str(sst.sel_rule)[:20]}")
         with debug5:
             st.write(f"quell_ziel_names: {str(sst.quell_ziel_names)[:20]}")
+
+
 def main():
     innit_st_page(debug=False)
 
@@ -500,6 +680,7 @@ def main():
                 st.rerun()
         with ganz_rechts:
             if st.button("logout"):
+                reset_sst()
                 sst.user_logged_in = False
                 sst.page = "home"
                 st.rerun()
@@ -524,26 +705,42 @@ def main():
         if sst.page == "login":
             with ganz_rechts:
                 if st.button("forgot pw"):
+                    reset_sst()
                     sst.page = "pw-reset"
                     st.rerun()
-            user = login.display_login()
+            user = neon_login.display_login()
             if user:
                 sst.username = user
                 sst.user_logged_in = True
                 sst.page = "user_home"
                 st.rerun()
         elif sst.page == "pw-reset":
+            reset_sst()
             with ganz_rechts:
                 if st.button("login"):
                     sst.page = "login"
                     st.rerun()
-            login.display_forgot_pw()
+            user = neon_login.display_forgot_pw()
+            if user:
+                st.success("password changed")
+            reset_sst()
+            sst.page = "login"
+            sst.user_logged_in = False
+            st.rerun()
+
         elif sst.page == "sign-up":
             with ganz_rechts:
                 if st.button("login"):
                     sst.page = "login"
                     st.rerun()
-            login.display_signup()
+            user = neon_login.display_signup()
+            if user:
+                st.success(f"Konto für {user} wurde erfolgreich erstellt!")
+                sst.username = user
+                sst.user_logged_in = True
+                if create_user_tables(user):
+                    sst.page = "user_home"
+                    st.rerun()
         else:
             with ganz_rechts:
                 if st.button("login"):
@@ -551,8 +748,10 @@ def main():
                     st.rerun()
             display_welcome()
 
+
+sst = st.session_state
+
 if __name__ == "__main__":
     #CONN = os.environ["NEON_KEY"]
     CONN = os.environ["NEON_URL_any"]
-    sst = st.session_state
     main()

@@ -1,5 +1,9 @@
+"""
+handles interaction with my neon db.
+"""
 
 import psycopg2
+
 
 def drop_tables_with_pattern(connection_string, pattern="_"):
     """
@@ -46,6 +50,7 @@ def drop_tables_with_pattern(connection_string, pattern="_"):
         print(f"An error occurred: {e}")
         return []
 
+
 def create_table(connection_string, table_name, columns):
     """
     Creates a new table in the database if it does not already exist.
@@ -81,6 +86,7 @@ def create_table(connection_string, table_name, columns):
     except Exception as e:
         print(f"An error occurred: {e}")
         return str(e)
+
 
 def write_to_db(connection_string, table, data):
     """
@@ -122,6 +128,7 @@ def write_to_db(connection_string, table, data):
         print(f"An error occurred: {e}")
         return str(e)
 
+
 def read_db(connection_string, table, condition='1=1', printout=False):
     """
     Reads and retrieves data from a specified table in the database based on a condition.
@@ -160,6 +167,7 @@ def read_db(connection_string, table, condition='1=1', printout=False):
         print(f"An error occurred: {e}")
         return str(e)
 
+
 def delete_record(connection_string, table_name, column_name, value_to_delete):
     """
     Deletes a record from the specified table where the column matches the given value.
@@ -173,11 +181,16 @@ def delete_record(connection_string, table_name, column_name, value_to_delete):
     Returns:
         str: Success message or error details.
     """
+
     try:
         # Connect to the database
         conn = psycopg2.connect(connection_string)
         cur = conn.cursor()
 
+    except Exception as e:
+        return f"Error occurred: {e}"
+
+    try:
         # Create the DELETE SQL query dynamically
         delete_query = f"DELETE FROM {table_name} WHERE {column_name} = %s"
 
@@ -195,7 +208,8 @@ def delete_record(connection_string, table_name, column_name, value_to_delete):
 
     finally:
         # Ensure resources are released
-        if 'cursor' in locals() and cur is not None:
+        if 'cursor' in locals():
             cur.close()
-        if 'connection' in locals() and conn is not None:
+        if 'connection' in locals():
             conn.close()
+

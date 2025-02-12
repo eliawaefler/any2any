@@ -1,6 +1,10 @@
-from neon import *
+"""
+here the admin can control the any2any database
+"""
+from utils.neon import *
 import uuid
 import os
+
 
 def create_empty_rules_table():
     table_name = "rules"
@@ -14,6 +18,7 @@ def create_empty_rules_table():
         "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
     }
     print(create_table(CONN, table_name, columns))
+
 
 def create_empty_log_table():
     table_name = "log"
@@ -46,7 +51,8 @@ def create_empty_users_table():
 
 def any2any_db_hard_reset():
     drop_tables_with_pattern(CONN) # drops all user created tables
-    drop_tables_with_pattern(CONN, "u") #drops rUles and Users
+    drop_tables_with_pattern(CONN, "u") #drops rules and Users
+
 
 def any2any_users_reset():
     for user in read_db(CONN, "users"):
@@ -85,6 +91,7 @@ def any2any_users_reset():
                                     "entity_name": "1",
                                     "entity_attributes": [],
                                     })
+
 
 def add_user():
 
@@ -177,9 +184,11 @@ def add_rules():
 
 if __name__ == "__main__":
     CONN = os.environ["NEON_URL_any"]
-    create_empty_log_table()
+    print("watch out what you do here")
+    #create_empty_log_table()
     # to DROP ALL users tables
-    #print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="eliainsel_")}")
+    #print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="elia")}")
     #any2any_users_reset()
     #users_db = read_db(CONN, "users", printout=False)
     #print(users_db)
+
