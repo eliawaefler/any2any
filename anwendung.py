@@ -704,6 +704,7 @@ def main():
                 sst.page = "user_home"
                 st.rerun()
         if sst.page == "login":
+            reset_sst()
             with ganz_rechts:
                 if st.button("forgot pw"):
                     sst.page = "pw-reset"
