@@ -11,7 +11,7 @@ from utils import  basic_utils
 import streamlit as st
 from utils import my_openai
 
-from any import *
+from anwendung import *
 from utils.my_openai import gpt4_new
 
 def construct_square(sq_pos, sq_say):
