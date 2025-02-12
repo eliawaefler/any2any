@@ -285,7 +285,8 @@ def display_user_fdm():
 
 
 def display_user_new_file(my_file):
-    new_file_type = st.selectbox("select file type", options=["quelle", "ziel", "Transferdaten", "mapper"])
+    new_file_type = st.selectbox("select file type", options=["quelle", "ziel", "Transferdaten", "mapper"],
+                                 index=1) # after a quelle auto ziel
     if new_file_type == "mapper":
         if st.button("add to my mappers"):
             if neon.write_to_db(CONN, f"{sst.username}_{new_file_type}",
@@ -705,7 +706,6 @@ def main():
         if sst.page == "login":
             with ganz_rechts:
                 if st.button("forgot pw"):
-                    reset_sst()
                     sst.page = "pw-reset"
                     st.rerun()
             user = neon_login.display_login()
