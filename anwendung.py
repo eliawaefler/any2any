@@ -667,19 +667,18 @@ def innit_st_page(debug=False):
 
 def main():
     innit_st_page(debug=False)
-
     #display_square()
-    hauptbereich, rechts, ganz_rechts = st.columns([12, 2, 2])
+    hauptbereich, login, fgtpw, regist, home = st.columns([12, 2, 2, 2, 2])
     if sst.user_logged_in:
         with hauptbereich:
             st.title(f"hello {sst.username}")
             st.title(f"")
-        with rechts:
+        with home:
             if st.button("home"):
                 reset_sst()
                 sst.page = "user_home"
                 st.rerun()
-        with ganz_rechts:
+        with login:
             if st.button("logout"):
                 reset_sst()
                 sst.user_logged_in = False
@@ -691,24 +690,29 @@ def main():
             display_user_fdm()
         elif sst.page == "user_create_mapper":
             display_user_new_mapper()
-        elif sst.page == "user_execute":
-            # not in use ??
-            # display_user_execute()
-            pass
+
     else: # not LOGGED IN
         with hauptbereich:
             st.title(f"any2any")
             st.title(f"")
-        with rechts:
+        with home:
             if st.button("home"):
                 sst.page = "user_home"
                 st.rerun()
+        with fgtpw:
+            if st.button("forgot pw"):
+                sst.page = "pw-reset"
+                st.rerun()
+        with login:
+            if st.button("log in"):
+                sst.page = "login"
+                st.rerun()
+        with regist:
+            if st.button("register"):
+                sst.page = "sign-up"
+                st.rerun()
         if sst.page == "login":
             reset_sst()
-            with ganz_rechts:
-                if st.button("forgot pw"):
-                    sst.page = "pw-reset"
-                    st.rerun()
             user = neon_login.display_login()
             if user:
                 sst.username = user
@@ -716,23 +720,11 @@ def main():
                 sst.page = "user_home"
                 st.rerun()
         elif sst.page == "pw-reset":
-            with ganz_rechts:
-                if st.button("login"):
-                    sst.page = "login"
-                    st.rerun()
-            user = neon_login.display_forgot_pw()
-            if user:
+            if neon_login.display_forgot_pw():
                 st.success("password changed")
-            reset_sst()
-            sst.page = "login"
-            sst.user_logged_in = False
-            st.rerun()
+                st.rerun()
 
         elif sst.page == "sign-up":
-            with ganz_rechts:
-                if st.button("login"):
-                    sst.page = "login"
-                    st.rerun()
             user = neon_login.display_signup()
             if user:
                 st.success(f"Konto für {user} wurde erfolgreich erstellt!")
@@ -742,10 +734,6 @@ def main():
                     sst.page = "user_home"
                     st.rerun()
         else:
-            with ganz_rechts:
-                if st.button("login"):
-                    sst.page = "login"
-                    st.rerun()
             display_welcome()
 
 
