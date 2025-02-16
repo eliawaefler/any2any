@@ -31,6 +31,7 @@ def get_headers(uploaded_file):
 
         for i, sheet_name in enumerate(sheet_names):
             with tabs[i]:
+                sst["no_headers"] = False
                 st.subheader(f"Sheet: {sheet_name}")  #
                 original_sheet_df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None)
                 s_inputs, abstand1, og_df, abstand2, t_df = st.columns([4, 1, 3, 1, 3])
@@ -39,9 +40,10 @@ def get_headers(uploaded_file):
                     use_this = st.toggle(f"use this sheet: {sheet_name}",
                                          key=f"use_entity_{sheet_name}", value=True)
                     if use_this:
+
                         tab_left, tab_right = st.columns(2)
                         with tab_left:
-                            headers_in_row = st.toggle(f"{sheet_name} \ncontains headers in a row",
+                            headers_in_row = st.toggle(f"{sheet_name} \n\ncontains headers in a row",
                                                        key=f"headers_in_row_{sheet_name}", value=True)
                             headers_in_col = st.toggle(f"{sheet_name}  \ncontains headers in a column",
                                                        key=f"headers_in_col_{sheet_name}")
@@ -90,7 +92,7 @@ def get_headers(uploaded_file):
                                 #highlights.append((colors[n % len(colors)], list_of_cells))
 
                                 dimensions[dim_name] = list_of_cells
-                                transformations[sheet_name]["dimensions"][n] = list_of_cells
+                                transformations[sheet_name]["dimensions"][dim_name] = list_of_cells
                                 for e in list_of_cells:
                                     header_locations.append(e)
                             header_locations = list(set(header_locations))
@@ -100,7 +102,6 @@ def get_headers(uploaded_file):
                             og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
                             detected_header_vals[sheet_name] = [original_sheet_df.iloc[h_loc] for h_loc in header_locations]
                             #transformed_df = any2any_backend.standardize_dataframe(original_sheet_df, dimensions)
-                            st.write(transformations)
 
                         # transpose
                         elif headers_in_col and not headers_in_row:
@@ -128,7 +129,6 @@ def get_headers(uploaded_file):
                         elif headers_in_row and not headers_in_col:
                             transformations[sheet_name]["case"] = "basic"
                             with tab_left:
-
                                 header_row = st.selectbox(f"Select header row for {sheet_name}",
                                                           options=list(range(len(original_sheet_df))),
                                                           index=0, key=f"header_row_{sheet_name}")
@@ -151,20 +151,25 @@ def get_headers(uploaded_file):
                         # no headers case
                         else:
                             st.error("No headers detected. Please upload another file.")
-                            #tf_detected_headers[sheet_name] = [(0, 0)]
-                            #transformed_df = original_sheet_df
-                            #og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
+                            sst.no_headers = True
+                            detected_header_vals[sheet_name] = []
+                            transformations[sheet_name] = {"case": "basic", "h_row": 0, "h_off": 0}
 
-                    with og_df:
-                        st.write("uploaded DataFrame:")
-                        st.dataframe(any2any_backend.highlight_multiple_cells(original_sheet_df, og_detected_headers[sheet_name]))
-                    with t_df:
-                        st.write("Dataframe with detected headers:")
-                        transformed_data = any2any_backend.transform_file(uploaded_file, transformations).items()
-                        for sheet, transformed_df in transformed_data:
-                            if sheet == sheet_name:
-                                st.dataframe(transformed_df)
-                                #st.dataframe(any2any_backend.highlight_multiple_cells(transformed_df, tf_detected_headers[sheet_name]))
+
+                    if not sst.no_headers:
+                        with og_df:
+                            st.write("uploaded DataFrame:")
+                            st.dataframe(any2any_backend.highlight_multiple_cells(original_sheet_df, og_detected_headers[sheet_name]))
+                        with t_df:
+                            st.write("Dataframe with detected headers:")
+                            transformed_data = any2any_backend.transform_file(uploaded_file, transformations)
+                            for sheet, transformed_df in transformed_data.items():
+                                if sheet == sheet_name:
+                                    try:
+                                        st.dataframe(transformed_df)
+                                    except ValueError as e:
+                                        st.error(e)
+                                    #st.dataframe(any2any_backend.highlight_multiple_cells(transformed_df, tf_detected_headers[sheet_name]))
 
         if st.button("Confirm Headers for all sheets"):
             re_list = [True, detected_header_vals, transformations]
@@ -762,7 +767,6 @@ def main():
                     st.rerun()
         else:
             display_welcome()
-
 
 sst = st.session_state
 

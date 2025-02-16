@@ -2,13 +2,12 @@
 hier kommen funktionen, die von der ANWENDUNG aufgerufen werden.
 """
 import os
-
 import numpy as np
 from openpyxl import load_workbook
 import pandas as pd
 from utils import neon
 import uuid
-
+CONN = os.environ["NEON_URL_any"]
 
 def create_user_tables(user_n):
     neon.create_table(CONN, f"{user_n}_Mapper", {
@@ -52,6 +51,7 @@ def create_user_tables(user_n):
         'sst': ""})
     return True
 
+
 def transform_file(my_file, my_transformations):
     """
     Transforms an Excel file based on the 'transformations' dictionary.
@@ -94,7 +94,7 @@ def transform_file(my_file, my_transformations):
         # 2D Case: Custom header mapping
         elif transformation["case"] == "2d":
             #dimensions = {dim_name: transformation[dim_index] for dim_index, dim_name in enumerate(transformation) if isinstance(dim_index, int)}
-            transformed_df = standardize_dataframe(original_sheet_df, len(transformation["dimensions"].keys()))
+            transformed_df = standardize_dataframe(original_sheet_df, my_transformations[sheet_name]["dimensions"])
 
         else:
             raise ValueError(f"Unknown transformation case: {transformation['case']}")
