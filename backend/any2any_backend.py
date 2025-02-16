@@ -1,10 +1,108 @@
 """
 hier kommen funktionen, die von der ANWENDUNG aufgerufen werden.
 """
+import os
 
 import numpy as np
 from openpyxl import load_workbook
 import pandas as pd
+from utils import neon
+import uuid
+
+
+def create_user_tables(user_n):
+    neon.create_table(CONN, f"{user_n}_Mapper", {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "name": "VARCHAR(1000)",
+        "data": "VARCHAR(1000000)",
+        "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+    })
+    neon.create_table(CONN, f"{user_n}_Quelle", {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "API": "VARCHAR(255) NOT NULL",
+        "file_name": "VARCHAR(255) NOT NULL",
+        "transformations": "JSONB NOT NULL",
+        "structure": "JSONB NOT NULL",
+        "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+    })
+    neon.create_table(CONN, f"{user_n}_Ziel", {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "API": "VARCHAR(255) NOT NULL",
+        "file_name": "VARCHAR(255) NOT NULL",
+        "transformations": "JSONB NOT NULL",
+        "structure": "JSONB NOT NULL",
+        "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+    })
+    neon.create_table(CONN, f"{user_n}_FDM", {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "entity_name": "VARCHAR(255) NOT NULL",  #
+        "attributes": "JSONB NOT NULL",
+        "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
+    })
+    neon.write_to_db(CONN, f"{user_n}_FDM", {
+        "guid": str(uuid.uuid4()),  # Unique identifier
+        "entity_name": "1",
+        "attributes": [],
+    })
+    neon.write_to_db(CONN, "log", {
+        'guid': str(uuid.uuid4()),
+        'activity_type': "create user",
+        'activity_desc': f"created {user_n}",
+        'user_name': user_n,
+        'sst': ""})
+    return True
+
+def transform_file(my_file, my_transformations):
+    """
+    Transforms an Excel file based on the 'transformations' dictionary.
+
+    Args:
+        my_file: Uploaded Excel file.
+        my_transformations: Dictionary containing transformation rules from `get_headers()`.
+
+    Returns:
+        Dictionary where keys are sheet names and values are transformed DataFrames.
+    """
+
+    if my_file is None:
+        raise ValueError("No file provided.")
+
+    # Load the Excel file
+    excel_data = pd.ExcelFile(my_file)
+    transformed_sheets = {}
+
+    # Iterate through each sheet in the transformations dictionary
+    for sheet_name, transformation in my_transformations.items():
+        original_sheet_df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None)
+
+        # Basic case: Header row selected
+        if transformation["case"] == "basic":
+            h_row = transformation["h_row"]
+            h_off = transformation["h_off"]
+            transformed_df = original_sheet_df.iloc[h_row:].reset_index(drop=True)
+            transformed_df.columns = transformed_df.iloc[0]  # Set headers
+            transformed_df = transformed_df.iloc[1:, h_off:].reset_index(drop=True)
+
+        # Transpose case: Headers in a column
+        elif transformation["case"] == "transpose":
+            h_col = transformation["h_col"]
+            h_off = transformation["h_off"]
+            transformed_df = original_sheet_df.T.iloc[h_col:].reset_index(drop=True)
+            transformed_df.columns = transformed_df.iloc[0]  # Set headers
+            transformed_df = transformed_df.iloc[1:, h_off:].reset_index(drop=True)
+
+        # 2D Case: Custom header mapping
+        elif transformation["case"] == "2d":
+            #dimensions = {dim_name: transformation[dim_index] for dim_index, dim_name in enumerate(transformation) if isinstance(dim_index, int)}
+            transformed_df = standardize_dataframe(original_sheet_df, len(transformation["dimensions"].keys()))
+
+        else:
+            raise ValueError(f"Unknown transformation case: {transformation['case']}")
+
+        transformed_sheets[sheet_name] = transformed_df
+
+    return transformed_sheets
+
 
 
 def get_bottom_right_position(df):
@@ -83,37 +181,6 @@ def highlight_multiple_cells(df, highlights, highlight_headers=False):
 
     return styled_df
 
-def apply_transformations(excel_data, transformation_rules):
-    transformed_data = {}
-
-    for sheet_name, rules in transformation_rules.items():
-        df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None)
-
-        if rules["type"] == "2D":
-            dimensions = {f"Dimension{n}": [(0, n)] for n in range(rules["num_dimensions"])}
-            df = standardize_dataframe(df, dimensions)
-        elif rules["type"] == "transpose":
-            df = df.T
-        elif rules["type"] == "basic":
-            header_row = rules["header_row"]
-            df.columns = df.iloc[header_row]
-            df = df.iloc[header_row + 1:]
-
-        transformed_data[sheet_name] = df
-
-    return transformed_data
-
-
-def get_structure(transformed_data):
-    structure = {}
-
-    for sheet_name, df in transformed_data.items():
-        structure[sheet_name] = {
-            "headers": list(df.iloc[0]),
-            "data_ranges": {col: (1, len(df)) for col in df.columns}
-        }
-
-    return structure
 
 # Function to extract entity names and attribute names
 def extract_entity_attributes(file, structure="other"):
@@ -357,6 +424,7 @@ def standardize_dataframe(df, metadata_dict):
 
 
 if __name__ == '__main__':
+    CONN = os.environ["NEON_URL_any"]
     # Example Usage
     out_df = pd.DataFrame([
         ["X1", "X2", "X3", None],  # Column Metadata
