@@ -33,6 +33,19 @@ def create_empty_log_table():
     print(create_table(CONN, table_name, columns))
 
 
+def create_empty_systems_table():
+    table_name = "systems"
+    columns = {
+        "guid": "UUID PRIMARY KEY",  # Unique identifier
+        "sys_name": "VARCHAR(1000)",
+        "sys_base_url": "VARCHAR(1000)",
+        "sys_desc": "VARCHAR(1000)",
+        "data_type": "VARCHAR(1000)",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+    }
+    print(create_table(CONN, table_name, columns))
+
+
 def create_empty_users_table():
     table_name = "users"
     columns = {
@@ -186,9 +199,11 @@ if __name__ == "__main__":
     CONN = os.environ["NEON_URL_any"]
     print("watch out what you do here")
     #create_empty_log_table()
+    #create_empty_systems_table()
     # to DROP ALL users tables
     #print(f"Dropped tables: {drop_tables_with_pattern(CONN, pattern="elia")}")
     #any2any_users_reset()
     #users_db = read_db(CONN, "users", printout=False)
     #print(users_db)
+
 

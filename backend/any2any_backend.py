@@ -1,9 +1,8 @@
-
 """
 hier kommen funktionen, die von der ANWENDUNG aufgerufen werden.
 """
+
 import numpy as np
-import pandas
 from openpyxl import load_workbook
 import pandas as pd
 
@@ -38,7 +37,7 @@ def transform_2d_to_standard(df, header_names, data_start):
     """ Transforms a multi-dimensional data format into a standard 2D DataFrame. """
     print(df)
     #pandas.DataFrame(columns=header_names, data=df.iloc[data_start[0]:, data_start[1]:].copy())
-    transformed_df = pandas.DataFrame(data=df.iloc[data_start[0]:, data_start[1]:].copy()).melt()
+    transformed_df = pd.DataFrame(data=df.iloc[data_start[0]:, data_start[1]:].copy()).melt()
     #transformed_df = df.melt()
     print(transformed_df)
 
@@ -64,9 +63,6 @@ def highlight_multiple_cells(df, highlights, highlight_headers=False):
     Returns:
         pd.io.formats.style.Styler: Styled DataFrame.
     """
-
-    def highlight_func(val):
-        return "background-color: yellow" if val else ""
 
     # Create a DataFrame of same shape as df, filled with empty strings
     highlight_df = pd.DataFrame("", index=df.index, columns=df.columns)
@@ -146,13 +142,11 @@ def execute_ziel_transformation(data, mapper, ziel):
 
 
 def execute_mapper_transformation(data, mapper):
-
     """
     :param data:
     :param mapper:
     :return:
     """
-
     unique_quell_sheets = []
     for n in range(len(mapper)):
         sheet_name = mapper[n]["Quelle_Sheet"]
@@ -168,7 +162,7 @@ def execute_mapper_transformation(data, mapper):
             quelle_column = entry['Quelle_Column']
             transformation_rule = entry['Transformation_Rule']
             transformation_param = entry['Transformation_Rule_param']
-            ziel_sheet = entry['Ziel_Sheet']
+            #ziel_sheet = entry['Ziel_Sheet']
             ziel_column = entry['Ziel_Column']
 
             # Get the relevant source DataFrame
@@ -193,14 +187,16 @@ def execute_mapper_transformation(data, mapper):
                 ziel_df[ziel_column] = source_df.iloc[:, order].apply(lambda x: "".join(x.astype(str)), axis=1)
             elif transformation_rule == "add":
                 ziel_df[ziel_column] = source_df[quelle_column] + float(transformation_param)
+            elif transformation_rule == "sum":
+                pass
+            elif transformation_rule == "only_unique":
+                pass
+            elif transformation_rule == "forget_and_add":
+                pass
+
         except Exception as e:
             return [False, e]
     return [True, ziel_df]
-
-
-
-
-
 
 
 def transform_excel_data(file_path: str, sheet_name: str):
@@ -331,16 +327,16 @@ def standardize_dataframe(df, metadata_dict):
 
 if __name__ == '__main__':
     # Example Usage
-    df = pd.DataFrame([
+    out_df = pd.DataFrame([
         ["X1", "X2", "X3", None],  # Column Metadata
         [10, 20, 30, "A"],  # Data + Row Metadata
         [40, 50, 60, "B"]  # Data + Row Metadata
     ])
 
-    metadata_dict = {
+    metadata__dict = {
         "Category": [(0, 0), (0, 1), (0, 2)],  # Column metadata
         "Group": [(1, 3), (2, 3)]  # Row metadata
     }
 
-    standardized_df = standardize_dataframe(df, metadata_dict)
-    print(standardized_df)
+    standardized__df = standardize_dataframe(out_df, metadata__dict)
+    print(standardized__df)

@@ -2,7 +2,6 @@
 collection of simple helper functions
 """
 
-
 import ast
 import re
 
@@ -33,3 +32,5 @@ def extract_lists_from_string(s: str):
 
     except Exception:
         return []
+
+

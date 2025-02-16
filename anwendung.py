@@ -70,123 +70,130 @@ def get_headers(uploaded_file):
             with tabs[i]:
                 st.subheader(f"Sheet: {sheet_name}") #
                 original_sheet_df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None)
-                headers_in_row = st.toggle(f"{sheet_name} contains headers in a row",
-                                           key=f"headers_in_row_{sheet_name}", value=True)
-                headers_in_col = st.toggle(f"{sheet_name} contains headers in a column",
-                                           key=f"headers_in_col_{sheet_name}")
-                more_dimensions = st.toggle(f"{sheet_name} contains more than two dimensions",
-                                            key=f"more_dimensions_in_{sheet_name}")
-                more_entities = st.toggle(f"{sheet_name} contains more than ONE ENTITY",
-                                            key=f"more_ENTITIES_in_{sheet_name}")
-                if more_entities:
-                    st.write("this feature is not yet implemented, please clean your excel files")
-                    """
-                                     a, b, c = st.columns([1, 1, 4])
-                                     with a:
-                                         data_y = st.number_input(f"Start column for data in {sheet_name}",
-                                                                  min_value=0, max_value=len(original_sheet_df.columns)-1, value=0)
-                                     with b:
-                                         data_x = st.number_input(f"Start row for data in {sheet_name}",
-                                                                  min_value=0, max_value=len(original_sheet_df)-1, value=0)
-                                     """
-                header_locations = []
-                header_vals = []
-                colors = ["yellow", "lightblue", "light green", "light coral"]
+                use_this = st.toggle(f"use this sheet: {sheet_name}",
+                                           key=f"use_entity_{sheet_name}", value=True)
+                if use_this:
+                    headers_in_row = st.toggle(f"{sheet_name} contains headers in a row",
+                                               key=f"headers_in_row_{sheet_name}", value=True)
+                    headers_in_col = st.toggle(f"{sheet_name} contains headers in a column",
+                                               key=f"headers_in_col_{sheet_name}")
+                    more_dimensions = st.toggle(f"{sheet_name} contains more than two dimensions",
+                                                key=f"more_dimensions_in_{sheet_name}")
+                    more_entities = st.toggle(f"{sheet_name} contains more than ONE ENTITY",
+                                                key=f"more_ENTITIES_in_{sheet_name}")
+                    if more_entities:
+                        st.write("this feature is not yet implemented, please clean your excel files")
+                        """
+                                         a, b, c = st.columns([1, 1, 4])
+                                         with a:
+                                             data_y = st.number_input(f"Start column for data in {sheet_name}",
+                                                                      min_value=0, max_value=len(original_sheet_df.columns)-1, value=0)
+                                         with b:
+                                             data_x = st.number_input(f"Start row for data in {sheet_name}",
+                                                                      min_value=0, max_value=len(original_sheet_df)-1, value=0)
+                                         """
+                    header_locations = []
+                    header_vals = []
+                    #colors = ["yellow", "lightblue", "light green", "light coral"]
+                    # todo: highlight data and header relation on click
 
-                # 2d case
-                if headers_in_col and headers_in_row:
-                    dimensions = {}
+                    # 2d case
+                    if headers_in_col and headers_in_row:
+                        dimensions = {}
 
-                    n_dim = 2
-                    if more_dimensions:
-                        n_dim = int(st.slider(f"Number of dimensions for {sheet_name}", 3, 10))
+                        n_dim = 2
+                        if more_dimensions:
+                            n_dim = int(st.slider(f"Number of dimensions for {sheet_name}", 3, 10))
 
-                    #highlights = [("blue", (int(data_x-1), int(data_y-1)))]
-                    for n in range(n_dim):
-                        dim_start = [0, 0]
-                        dim_end = [0, 1]
-                        a, b, c, d, e, f = st.columns([2, 1, 1, 1, 1, 6])
-                        with a:
-                            dim_name = st.text_input(f"Name of Dimension {n}", key=f"dim_name_{n}_{sheet_name}", value="DimensionX")
-                        with b:
-                            dim_start[0] = int(st.number_input(f"Start row for Dimension {n}", key=f"start_row_{n}_{sheet_name}", step=1, value=0))
-                        with c:
-                            dim_start[1] = int(st.number_input(f"Start col for Dimension {n}", key=f"start_col_{n}_{sheet_name}", step=1, value=1))
-                        with d:
-                            dim_end[0] = int(st.number_input(f"End row for Dimension {n}", key=f"end_row_{n}_{sheet_name}", step=1, value=0))
-                        with e:
-                            dim_end[1] = int(st.number_input(f"End col for Dimension {n}", key=f"end_col_{n}_{sheet_name}", step=1, value=5))
+                        #highlights = [("blue", (int(data_x-1), int(data_y-1)))]
+                        for n in range(n_dim):
+                            dim_start = [0, 0]
+                            dim_end = [0, 1]
+                            a, b, c, d, e, f = st.columns([2, 1, 1, 1, 1, 6])
+                            with a:
+                                dim_name = st.text_input(f"Name of Dimension {n}", key=f"dim_name_{n}_{sheet_name}", value="DimensionX")
+                            with b:
+                                dim_start[0] = int(st.number_input(f"Start row for Dimension {n}", key=f"start_row_{n}_{sheet_name}", step=1, value=0))
+                            with c:
+                                dim_start[1] = int(st.number_input(f"Start col for Dimension {n}", key=f"start_col_{n}_{sheet_name}", step=1, value=1))
+                            with d:
+                                dim_end[0] = int(st.number_input(f"End row for Dimension {n}", key=f"end_row_{n}_{sheet_name}", step=1, value=0))
+                            with e:
+                                dim_end[1] = int(st.number_input(f"End col for Dimension {n}", key=f"end_col_{n}_{sheet_name}", step=1, value=5))
 
-                        list_of_cells = any2any_backend.get_cells_in_range(dim_start, dim_end)
-                        #highlights.append((colors[n % len(colors)], list_of_cells))
+                            list_of_cells = any2any_backend.get_cells_in_range(dim_start, dim_end)
+                            #highlights.append((colors[n % len(colors)], list_of_cells))
 
-                        dimensions[dim_name] = list_of_cells
-                        for e in list_of_cells:
-                            header_locations.append(e)
-                    header_locations = list(set(header_locations))
+                            dimensions[dim_name] = list_of_cells
+                            for e in list_of_cells:
+                                header_locations.append(e)
+                        header_locations = list(set(header_locations))
 
-                    #tf_detected_headers[sheet_name] = [(0, 0), (0, 1)] + [(0, _) for _ in range(2, n_dim+2)]
-                    tf_detected_headers[sheet_name] = header_locations
-                    og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
-                    detected_header_vals[sheet_name] = [original_sheet_df.iloc[h_loc] for h_loc in header_locations]
-                    transformed_df = any2any_backend.standardize_dataframe(original_sheet_df, dimensions)
-
-                # transpose
-                elif headers_in_col and not headers_in_row:
-                    header_col = st.selectbox(f"Select header column for {sheet_name}",
-                                              options=list(range(len(original_sheet_df.columns))),
-                                              index=0, key=f"header_col_{sheet_name}")
-
-                    header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
-                                                 options=list(range(10)), index=0,
-                                                 key=f"header_offset_{sheet_name}")
-
-                    for row in range(header_offset, len(original_sheet_df)):
-                        header_locations.append((row, header_col))
-                        header_vals.append(original_sheet_df.iloc[row, header_col])
-
-                    transformed_df = original_sheet_df.T
-                    tf_detected_headers[sheet_name] = [(b, a) for a, b in header_locations]
-                    detected_header_vals[sheet_name] = header_vals
-                    og_detected_headers[sheet_name] = header_locations
+                        #tf_detected_headers[sheet_name] = [(0, 0), (0, 1)] + [(0, _) for _ in range(2, n_dim+2)]
+                        tf_detected_headers[sheet_name] = header_locations
+                        og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
+                        detected_header_vals[sheet_name] = [original_sheet_df.iloc[h_loc] for h_loc in header_locations]
+                        transformed_df = any2any_backend.standardize_dataframe(original_sheet_df, dimensions)
 
 
-                # basic case
-                elif headers_in_row and not headers_in_col:
-                    header_row = st.selectbox(f"Select header row for {sheet_name}",
-                                              options=list(range(len(original_sheet_df))),
-                                              index=0, key=f"header_row_{sheet_name}")
+                    # transpose
+                    elif headers_in_col and not headers_in_row:
+                        header_col = st.selectbox(f"Select header column for {sheet_name}",
+                                                  options=list(range(len(original_sheet_df.columns))),
+                                                  index=0, key=f"header_col_{sheet_name}")
 
-                    header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
-                                                 options=list(range(10)), index=0,
-                                                 key=f"header_offset_{sheet_name}")
+                        header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
+                                                     options=list(range(10)), index=0,
+                                                     key=f"header_offset_{sheet_name}")
 
-                    for col in range(header_offset, len(original_sheet_df.columns)):
-                        header_locations.append((header_row, col))
-                        header_vals.append(original_sheet_df.iloc[header_row, col])
+                        for row in range(header_offset, len(original_sheet_df)):
+                            header_locations.append((row, header_col))
+                            header_vals.append(original_sheet_df.iloc[row, header_col])
 
-                    tf_detected_headers[sheet_name] = header_locations
-                    detected_header_vals[sheet_name] = header_vals
-                    transformed_df = original_sheet_df
-                    og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
-
-
-                # no headers case
-                else:
-                    st.error("No headers detected. Please upload another file.")
-                    tf_detected_headers[sheet_name] = [(0, 0)]
-                    transformed_df = original_sheet_df
-                    og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
+                        transformed_df = original_sheet_df.T
+                        tf_detected_headers[sheet_name] = [(b, a) for a, b in header_locations]
+                        detected_header_vals[sheet_name] = header_vals
+                        og_detected_headers[sheet_name] = header_locations
 
 
-                if str(transformed_df) != str(original_sheet_df):
-                    st.write("uploaded DataFrame:")
-                    st.dataframe(any2any_backend.highlight_multiple_cells(original_sheet_df, og_detected_headers[sheet_name]))
-                st.write("Dataframe with detected headers:")
-                st.dataframe(any2any_backend.highlight_multiple_cells(transformed_df, tf_detected_headers[sheet_name]))
+                    # basic case
+                    elif headers_in_row and not headers_in_col:
+                        header_row = st.selectbox(f"Select header row for {sheet_name}",
+                                                  options=list(range(len(original_sheet_df))),
+                                                  index=0, key=f"header_row_{sheet_name}")
 
+                        header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
+                                                     options=list(range(10)), index=0,
+                                                     key=f"header_offset_{sheet_name}")
+
+                        for col in range(header_offset, len(original_sheet_df.columns)):
+                            header_locations.append((header_row, col))
+                            header_vals.append(original_sheet_df.iloc[header_row, col])
+
+                        tf_detected_headers[sheet_name] = header_locations
+                        detected_header_vals[sheet_name] = header_vals
+                        transformed_df = original_sheet_df
+                        og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
+
+
+                    # no headers case
+                    else:
+                        st.error("No headers detected. Please upload another file.")
+                        tf_detected_headers[sheet_name] = [(0, 0)]
+                        transformed_df = original_sheet_df
+                        og_detected_headers[sheet_name] = tf_detected_headers[sheet_name]
+
+
+                    if str(transformed_df) != str(original_sheet_df):
+                        st.write("uploaded DataFrame:")
+                        st.dataframe(any2any_backend.highlight_multiple_cells(original_sheet_df, og_detected_headers[sheet_name]))
+                    st.write("Dataframe with detected headers:")
+                    st.write("Make sure the data displayed below each header also belongs to this header.")
+                    st.dataframe(any2any_backend.highlight_multiple_cells(transformed_df, tf_detected_headers[sheet_name]))
 
         if st.button("Confirm Headers for all sheets"):
+            # todo: somehow safe the transformations
+
             return detected_header_vals
 
 
@@ -230,6 +237,33 @@ def display_welcome():
                             """)
 
 
+def display_new_api():
+    """
+    WORK IN PROGRESS
+    todo
+
+    :return:
+    """
+
+
+    st.subheader("new API connection")
+    systems = list(neon.read_db(CONN, "systems"))
+    st.write(f"currently supportet Systems: {[sys[1] for sys in systems]}")
+    api_link = st.text_input("link to the API (baseURL)")
+    m_name = str(st.text_input("Model name")).replace("%20", " ")
+    sys_username = st.text_input("System user name")
+    sys_pw = st.text_input("System PW")
+
+    if m_name:
+        if sys_username:
+            if sys_pw:
+                if api_link:
+                    if st.button("execute"):
+                        st.warning("this is not yet implemented")
+                        pass
+
+
+
 def display_user_fdm():
     quellen = neon.read_db(CONN, f"{sst.username}_quelle")
     mappers = neon.read_db(CONN, f"{sst.username}_mapper")
@@ -241,6 +275,8 @@ def display_user_fdm():
         st.subheader("")
         st.subheader("lade eine ZIELDATEI hoch    :dart:              -->>")
     elif len(mappers) == 0:
+        #if st.button("wizard_go"):
+        #    wizard_go() #todo
         st.subheader("erstelle Deinen ersten MAPPER  :twisted_rightwards_arrows:          -->>")
     else:
         st.write("to execute a transformation, upload Transferdaten")
@@ -394,9 +430,14 @@ def display_user_home():
             sst.quell_ziel_names = ["", ""]
             st.rerun()
         st.write()
-        st.write("or")
         st.write()
         new_file = st.file_uploader("upload new file")
+        st.write()
+        st.write()
+        if st.button("Create connection via API"):
+            sst.page = "user_api"
+            st.rerun()
+
     if new_file:
         display_user_new_file(new_file)
 
@@ -462,8 +503,13 @@ def display_user_new_mapper():
         no_sst_rule_p = [None for _ in range(sst.rows)]
         no_sst_ziel_name = [None for _ in range(sst.rows)]
         no_sst_ziel_col = [None for _ in range(sst.rows)]
+        st.write("Use Cases")
+        st.write(sst.quell_cols["Transformationen"])
+        # TODO Fix bug
+        st.write("Use Cases")
         for n in range(sst.rows):
             col1, col2, col3, col4, col5, col6 = st.columns(6)
+
             with col1:
                 no_sst_quell_name[n] = st.selectbox(
                     f"Quelle Entity",
@@ -471,6 +517,9 @@ def display_user_new_mapper():
                     key=f"quel_entity_{quelle}_{n}"
                 )
             with col2:
+                st.write(no_sst_quell_name[n])
+                st.write(sst.quell_cols[no_sst_quell_name[n]])
+
                 no_sst_quell_col[n] = st.selectbox(
                     f"Quelle Column",
                     sst.quell_cols[no_sst_quell_name[n]],
@@ -494,6 +543,7 @@ def display_user_new_mapper():
                     key=f"ziel_entity_{quelle}_{n}"
                 )
             with col6:
+                st.write(sst.ziel_cols[no_sst_ziel_name[n]])
                 no_sst_ziel_col[n] = st.selectbox(
                     f"ZIEL Column",
                     sst.ziel_cols[no_sst_ziel_name[n]],
@@ -668,7 +718,7 @@ def innit_st_page(debug=False):
 def main():
     innit_st_page(debug=False)
     #display_square()
-    hauptbereich, login, fgtpw, regist, home = st.columns([12, 2, 2, 2, 2])
+    hauptbereich, login, fgt_pw, register, home = st.columns([12, 2, 2, 2, 2])
     if sst.user_logged_in:
         with hauptbereich:
             st.title(f"hello {sst.username}")
@@ -690,6 +740,8 @@ def main():
             display_user_fdm()
         elif sst.page == "user_create_mapper":
             display_user_new_mapper()
+        elif sst.page == "user_api":
+            display_new_api()
 
     else: # not LOGGED IN
         with hauptbereich:
@@ -699,7 +751,7 @@ def main():
             if st.button("home"):
                 sst.page = "user_home"
                 st.rerun()
-        with fgtpw:
+        with fgt_pw:
             if st.button("forgot pw"):
                 sst.page = "pw-reset"
                 st.rerun()
@@ -707,7 +759,7 @@ def main():
             if st.button("log in"):
                 sst.page = "login"
                 st.rerun()
-        with regist:
+        with register:
             if st.button("register"):
                 sst.page = "sign-up"
                 st.rerun()

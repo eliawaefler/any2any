@@ -1,8 +1,12 @@
 streamlit~=1.41.1
-openpyxl
+openpyxl~=3.1.5
 pandas~=2.2.2
 pydeck~=0.8.1b0
 pillow~=10.3.0
 psycopg2-binary>=2.9.6
 sqlalchemy>=2.0.0
 passlib~=1.7.4
+requests~=2.31.0
+openai~=1.23.6
+numpy~=1.26.4
+PyAutoGUI~=0.9.54
