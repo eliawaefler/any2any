@@ -8,6 +8,8 @@ import time
 import uuid
 import streamlit as st
 import pandas as pd
+from streamlit.file_util import file_in_pythonpath
+
 from utils import neon
 from backend import any2any_backend
 from backend import neon_login
@@ -25,14 +27,7 @@ def get_headers(uploaded_file):
         transformations = {}
 
         tabs = st.tabs(sheet_names)
-        if st.button("Confirm Headers for all sheets"):
-            st.write("headers")
-            st.write(detected_header_vals)
-            st.write("transformations")
-            st.write(transformations)
 
-            if st.button("confirm again"):
-                return [transformations, detected_header_vals]
 
         for i, sheet_name in enumerate(sheet_names):
             with tabs[i]:
@@ -46,14 +41,14 @@ def get_headers(uploaded_file):
                     if use_this:
                         tab_left, tab_right = st.columns(2)
                         with tab_left:
-                            headers_in_row = st.toggle(f"{sheet_name} contains headers in a row",
+                            headers_in_row = st.toggle(f"{sheet_name} \ncontains headers in a row",
                                                        key=f"headers_in_row_{sheet_name}", value=True)
-                            headers_in_col = st.toggle(f"{sheet_name} contains headers in a column",
+                            headers_in_col = st.toggle(f"{sheet_name}  \ncontains headers in a column",
                                                        key=f"headers_in_col_{sheet_name}")
                         with tab_right:
-                            more_dimensions = st.toggle(f"{sheet_name} has more than two dimensions",
+                            more_dimensions = st.toggle(f"{sheet_name}  \nhas more than two dimensions",
                                                         key=f"more_dimensions_in_{sheet_name}")
-                            more_entities = st.toggle(f"{sheet_name} has more than one entity",
+                            more_entities = st.toggle(f"{sheet_name}  \nhas more than one entity",
                                                         key=f"more_ENTITIES_in_{sheet_name}")
                         if more_entities:
                             st.warning("this feature is not yet implemented, please clean your excel files")
@@ -171,6 +166,9 @@ def get_headers(uploaded_file):
                                 st.dataframe(transformed_df)
                                 #st.dataframe(any2any_backend.highlight_multiple_cells(transformed_df, tf_detected_headers[sheet_name]))
 
+        if st.button("Confirm Headers for all sheets"):
+            re_list = [True, transformations, detected_header_vals]
+            return re_list
 
 def display_welcome():
 
@@ -236,7 +234,6 @@ def display_new_api():
                     if st.button("execute"):
                         st.warning("this is not yet implemented")
                         pass
-
 
 
 def display_user_fdm():
@@ -312,11 +309,12 @@ def display_user_new_file(my_file):
                 st.rerun()
             else:
                 st.error("could not add mapper")
+
     elif new_file_type in ["quelle", "ziel"]:
         file_info = get_headers(my_file)
+        if file_info and file_info[0]:
 
-        if file_info:
-            file_structure, transformations = file_info
+            bo, file_structure, transformations = file_info
             data = {"guid": str(uuid.uuid4()),
                     "api": "na",
                     "file_name": my_file.name,
@@ -331,6 +329,8 @@ def display_user_new_file(my_file):
                     'user_name': sst.username,
                     'sst': ""}) == "success":
                     st.success(f"saved  {my_file.name}")
+                else:
+                    st.warning("log failed")
             else:
                 st.error(f"could not add {new_file_type}")
                 time.sleep(3)
@@ -338,7 +338,6 @@ def display_user_new_file(my_file):
             time.sleep(3)
             sst.page = "user_home"
             st.rerun()
-
 
     elif new_file_type == "Transferdaten":
         # add logic to select
