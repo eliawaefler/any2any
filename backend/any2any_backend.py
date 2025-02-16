@@ -83,6 +83,37 @@ def highlight_multiple_cells(df, highlights, highlight_headers=False):
 
     return styled_df
 
+def apply_transformations(excel_data, transformation_rules):
+    transformed_data = {}
+
+    for sheet_name, rules in transformation_rules.items():
+        df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None)
+
+        if rules["type"] == "2D":
+            dimensions = {f"Dimension{n}": [(0, n)] for n in range(rules["num_dimensions"])}
+            df = standardize_dataframe(df, dimensions)
+        elif rules["type"] == "transpose":
+            df = df.T
+        elif rules["type"] == "basic":
+            header_row = rules["header_row"]
+            df.columns = df.iloc[header_row]
+            df = df.iloc[header_row + 1:]
+
+        transformed_data[sheet_name] = df
+
+    return transformed_data
+
+
+def get_structure(transformed_data):
+    structure = {}
+
+    for sheet_name, df in transformed_data.items():
+        structure[sheet_name] = {
+            "headers": list(df.iloc[0]),
+            "data_ranges": {col: (1, len(df)) for col in df.columns}
+        }
+
+    return structure
 
 # Function to extract entity names and attribute names
 def extract_entity_attributes(file, structure="other"):

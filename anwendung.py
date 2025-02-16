@@ -57,13 +57,76 @@ def create_user_tables(user_n):
     return True
 
 
-def get_headers(uploaded_file):
+def get_struct(uploaded_file):
     if uploaded_file:
+
         excel_data = pd.ExcelFile(uploaded_file)
         sheet_names = excel_data.sheet_names
 
-        transformation = ""
-        structure = {}
+        transformation_rules = {}
+
+        tabs = st.tabs(sheet_names)
+        for i, sheet_name in enumerate(sheet_names):
+            with tabs[i]:
+                struct_left, struct_right = st.columns(2)
+                with struct_left:
+                    st.subheader(f"Sheet: {sheet_name}")
+                    original_sheet_df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None)
+                    use_this = st.toggle(f"Use this sheet: {sheet_name}",
+                                         key=f"use_entity_{sheet_name}", value=True)
+                    if use_this:
+                        transformation_rules[sheet_name] = {}
+
+                        h_row, h_col, m_ent = st.columns(3)
+                        with h_row:
+                            headers_in_row = st.toggle(f"{sheet_name} contains headers in a row",
+                                                       key=f"headers_in_row_{sheet_name}", value=True)
+                        with h_col:
+                            headers_in_col = st.toggle(f"{sheet_name} contains headers in a column",
+                                                       key=f"headers_in_col_{sheet_name}")
+                        with m_ent:
+                            more_entities = st.toggle(f"{sheet_name} contains more than ONE ENTITY",
+                                                      key=f"more_ENTITIES_in_{sheet_name}")
+                        if more_entities:
+                            st.write("this feature is not yet implemented, please clean your excel files")
+
+                        if headers_in_col and headers_in_row:
+                            transformation_rules[sheet_name]["type"] = "2D"
+                            transformation_rules[sheet_name]["num_dimensions"] = int(
+                                st.slider(f"Number of dimensions for {sheet_name}", 3, 10))
+                        elif headers_in_col:
+                            transformation_rules[sheet_name]["type"] = "transpose"
+                            transformation_rules[sheet_name]["header_col"] = st.selectbox(
+                                f"Select header column for {sheet_name}",
+                                options=list(range(len(original_sheet_df.columns))),
+                                index=0, key=f"header_col_{sheet_name}")
+                        elif headers_in_row:
+                            transformation_rules[sheet_name]["type"] = "basic"
+                            transformation_rules[sheet_name]["header_row"] = st.selectbox(
+                                f"Select header row for {sheet_name}",
+                                options=list(range(len(original_sheet_df))),
+                                index=0, key=f"header_row_{sheet_name}")
+                        else:
+                            transformation_rules[sheet_name]["type"] = "none"
+                with struct_right:
+                    standardized_data = any2any_backend.apply_transformations(excel_data, transformation_rules)
+                    if str(standardized_data) != str(original_sheet_df):
+                        st.write("uploaded DataFrame:")
+                        # todo st.dataframe(any2any_backend.highlight_multiple_cells(original_sheet_df, og_detected_headers[sheet_name]))
+                    st.write("Dataframe with detected headers:")
+                    st.write("Make sure the data displayed below each header also belongs to this header.")
+                    # todo st.dataframe(any2any_backend.highlight_multiple_cells(transformed_df, tf_detected_headers[sheet_name]))
+
+
+        if st.button("Confirm Headers for all sheets"):
+            structure = any2any_backend.get_structure(standardized_data)
+            return [transformation_rules, structure]
+
+
+def old_get_headers(uploaded_file):
+    if uploaded_file:
+        excel_data = pd.ExcelFile(uploaded_file)
+        sheet_names = excel_data.sheet_names
 
         tf_detected_headers = {}
         og_detected_headers = {}
@@ -206,7 +269,7 @@ def get_headers(uploaded_file):
         if st.button("Confirm Headers for all sheets"):
             # todo: somehow safe the transformations
 
-            return detected_header_vals #[transformation, structure]
+            return ["", detected_header_vals]
 
 
 def display_welcome():
@@ -350,31 +413,32 @@ def display_user_new_file(my_file):
             else:
                 st.error("could not add mapper")
     elif new_file_type in ["quelle", "ziel"]:
-        file_entities = get_headers(my_file)
-        if file_entities:
-            for entity, attributes in file_entities.items():
-                json_attributes = json.dumps(attributes)
-                data = {"guid": str(uuid.uuid4()),
-                        "api": "na",
-                        "file_name": my_file.name,
-                        "transformations": json.dumps("not yet implemented"),  #todo
-                        "structure": json_attributes  #todo
-                        }
-                if neon.write_to_db(CONN, f"{sst.username}_{new_file_type}", data) == "success":
-                    if neon.write_to_db(CONN, "log", {
-                        'guid': str(uuid.uuid4()),
-                        'activity_type': "safe file",
-                        'activity_desc': f"saved {new_file_type} named {my_file.name} TO {sst.username}_{new_file_type}",
-                        'user_name': sst.username,
-                        'sst': ""}) == "success":
-                        st.success(f"saved  {my_file.name} // {entity}")
-                else:
-                    st.error(f"could not add {new_file_type}")
-                    time.sleep(3)
-                    st.rerun()
+        file_info = old_get_headers(my_file)
+
+        if file_info:
+            file_structure, transformations = file_info
+            data = {"guid": str(uuid.uuid4()),
+                    "api": "na",
+                    "file_name": my_file.name,
+                    "transformations": json.dumps(transformations),
+                    "structure": json.dumps(file_structure)
+                    }
+            if neon.write_to_db(CONN, f"{sst.username}_{new_file_type}", data) == "success":
+                if neon.write_to_db(CONN, "log", {
+                    'guid': str(uuid.uuid4()),
+                    'activity_type': "safe file",
+                    'activity_desc': f"saved {new_file_type} named {my_file.name} TO {sst.username}_{new_file_type}",
+                    'user_name': sst.username,
+                    'sst': ""}) == "success":
+                    st.success(f"saved  {my_file.name}")
+            else:
+                st.error(f"could not add {new_file_type}")
+                time.sleep(3)
+                st.rerun()
             time.sleep(3)
             sst.page = "user_home"
             st.rerun()
+
 
     elif new_file_type == "Transferdaten":
         # add logic to select
