@@ -12,6 +12,8 @@ build/
 _backup code/
 develop-eggs/
 dist/
+admin/
+data/
 downloads/
 eggs/
 .eggs/
@@ -38,7 +40,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Backlog
-todo_backlog.txt
+admin/todo_backlog.txt
 
 # Unit test / coverage reports
 htmlcov/

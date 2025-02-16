@@ -18,22 +18,23 @@ def create_user_tables(user_n):
     neon.create_table(CONN, f"{user_n}_Mapper", {
         "guid": "UUID PRIMARY KEY",  # Unique identifier
         "name": "VARCHAR(1000)",
-        "data": "VARCHAR(1000000)"
+        "data": "VARCHAR(1000000)",
+        "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
     })
     neon.create_table(CONN, f"{user_n}_Quelle", {
         "guid": "UUID PRIMARY KEY",  # Unique identifier
         "API": "VARCHAR(255) NOT NULL",
         "file_name": "VARCHAR(255) NOT NULL",
-        "entity_name": "VARCHAR(255) NOT NULL",
-        "entity_attributes": "JSONB NOT NULL",
+        "transformations": "JSONB NOT NULL",
+        "structure": "JSONB NOT NULL",
         "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
     })
     neon.create_table(CONN, f"{user_n}_Ziel", {
         "guid": "UUID PRIMARY KEY",  # Unique identifier
         "API": "VARCHAR(255) NOT NULL",
         "file_name": "VARCHAR(255) NOT NULL",
-        "entity_name": "VARCHAR(255) NOT NULL",
-        "entity_attributes": "JSONB NOT NULL",
+        "transformations": "JSONB NOT NULL",
+        "structure": "JSONB NOT NULL",
         "added_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  # Auto-timestamp
     })
     neon.create_table(CONN, f"{user_n}_FDM", {
@@ -45,7 +46,7 @@ def create_user_tables(user_n):
     neon.write_to_db(CONN, f"{user_n}_FDM", {
         "guid": str(uuid.uuid4()),  # Unique identifier
         "entity_name": "1",
-        "entity_attributes": [],
+        "attributes": [],
     })
     neon.write_to_db(CONN, "log", {
         'guid': str(uuid.uuid4()),
@@ -54,7 +55,6 @@ def create_user_tables(user_n):
         'user_name': user_n,
         'sst': ""})
     return True
-
 
 def get_headers(uploaded_file):
     if uploaded_file:
