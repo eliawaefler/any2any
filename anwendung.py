@@ -56,10 +56,14 @@ def create_user_tables(user_n):
         'sst': ""})
     return True
 
+
 def get_headers(uploaded_file):
     if uploaded_file:
         excel_data = pd.ExcelFile(uploaded_file)
         sheet_names = excel_data.sheet_names
+
+        transformation = ""
+        structure = {}
 
         tf_detected_headers = {}
         og_detected_headers = {}
@@ -73,14 +77,19 @@ def get_headers(uploaded_file):
                 use_this = st.toggle(f"use this sheet: {sheet_name}",
                                            key=f"use_entity_{sheet_name}", value=True)
                 if use_this:
-                    headers_in_row = st.toggle(f"{sheet_name} contains headers in a row",
-                                               key=f"headers_in_row_{sheet_name}", value=True)
-                    headers_in_col = st.toggle(f"{sheet_name} contains headers in a column",
-                                               key=f"headers_in_col_{sheet_name}")
-                    more_dimensions = st.toggle(f"{sheet_name} contains more than two dimensions",
-                                                key=f"more_dimensions_in_{sheet_name}")
-                    more_entities = st.toggle(f"{sheet_name} contains more than ONE ENTITY",
-                                                key=f"more_ENTITIES_in_{sheet_name}")
+                    h_row, h_col, m_dim, m_ent, rest = st.columns(5)
+                    with h_row:
+                        headers_in_row = st.toggle(f"{sheet_name} contains headers in a row",
+                                                   key=f"headers_in_row_{sheet_name}", value=True)
+                    with h_col:
+                        headers_in_col = st.toggle(f"{sheet_name} contains headers in a column",
+                                                   key=f"headers_in_col_{sheet_name}")
+                    with m_dim:
+                        more_dimensions = st.toggle(f"{sheet_name} contains more than two dimensions",
+                                                    key=f"more_dimensions_in_{sheet_name}")
+                    with m_ent:
+                        more_entities = st.toggle(f"{sheet_name} contains more than ONE ENTITY",
+                                                    key=f"more_ENTITIES_in_{sheet_name}")
                     if more_entities:
                         st.write("this feature is not yet implemented, please clean your excel files")
                         """
@@ -119,7 +128,7 @@ def get_headers(uploaded_file):
                             with d:
                                 dim_end[0] = int(st.number_input(f"End row for Dimension {n}", key=f"end_row_{n}_{sheet_name}", step=1, value=0))
                             with e:
-                                dim_end[1] = int(st.number_input(f"End col for Dimension {n}", key=f"end_col_{n}_{sheet_name}", step=1, value=5))
+                                dim_end[1] = int(st.number_input(f"End col for Dimension {n}", key=f"end_col_{n}_{sheet_name}", step=1, value=len(original_sheet_df.columns)-1))
 
                             list_of_cells = any2any_backend.get_cells_in_range(dim_start, dim_end)
                             #highlights.append((colors[n % len(colors)], list_of_cells))
@@ -138,13 +147,14 @@ def get_headers(uploaded_file):
 
                     # transpose
                     elif headers_in_col and not headers_in_row:
-                        header_col = st.selectbox(f"Select header column for {sheet_name}",
-                                                  options=list(range(len(original_sheet_df.columns))),
-                                                  index=0, key=f"header_col_{sheet_name}")
-
-                        header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
-                                                     options=list(range(10)), index=0,
-                                                     key=f"header_offset_{sheet_name}")
+                        with h_row:
+                            header_col = st.selectbox(f"Select header column for {sheet_name}",
+                                                      options=list(range(len(original_sheet_df.columns))),
+                                                      index=0, key=f"header_col_{sheet_name}")
+                        with h_col:
+                            header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
+                                                         options=list(range(10)), index=0,
+                                                         key=f"header_offset_{sheet_name}")
 
                         for row in range(header_offset, len(original_sheet_df)):
                             header_locations.append((row, header_col))
@@ -158,13 +168,15 @@ def get_headers(uploaded_file):
 
                     # basic case
                     elif headers_in_row and not headers_in_col:
-                        header_row = st.selectbox(f"Select header row for {sheet_name}",
-                                                  options=list(range(len(original_sheet_df))),
-                                                  index=0, key=f"header_row_{sheet_name}")
+                        with h_row:
 
-                        header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
-                                                     options=list(range(10)), index=0,
-                                                     key=f"header_offset_{sheet_name}")
+                            header_row = st.selectbox(f"Select header row for {sheet_name}",
+                                                      options=list(range(len(original_sheet_df))),
+                                                      index=0, key=f"header_row_{sheet_name}")
+                        with h_col:
+                            header_offset = st.selectbox(f"Offset for headers in {sheet_name}",
+                                                         options=list(range(10)), index=0,
+                                                         key=f"header_offset_{sheet_name}")
 
                         for col in range(header_offset, len(original_sheet_df.columns)):
                             header_locations.append((header_row, col))
@@ -194,7 +206,7 @@ def get_headers(uploaded_file):
         if st.button("Confirm Headers for all sheets"):
             # todo: somehow safe the transformations
 
-            return detected_header_vals
+            return detected_header_vals #[transformation, structure]
 
 
 def display_welcome():
@@ -345,8 +357,8 @@ def display_user_new_file(my_file):
                 data = {"guid": str(uuid.uuid4()),
                         "api": "na",
                         "file_name": my_file.name,
-                        "entity_name": str(entity),
-                        "entity_attributes": json_attributes
+                        "transformations": json.dumps("not yet implemented"),  #todo
+                        "structure": json_attributes  #todo
                         }
                 if neon.write_to_db(CONN, f"{sst.username}_{new_file_type}", data) == "success":
                     if neon.write_to_db(CONN, "log", {
