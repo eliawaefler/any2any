@@ -167,7 +167,7 @@ def get_headers(uploaded_file):
                                 #st.dataframe(any2any_backend.highlight_multiple_cells(transformed_df, tf_detected_headers[sheet_name]))
 
         if st.button("Confirm Headers for all sheets"):
-            re_list = [True, transformations, detected_header_vals]
+            re_list = [True, detected_header_vals, transformations]
             return re_list
 
 def display_welcome():
