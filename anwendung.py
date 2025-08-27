@@ -153,6 +153,10 @@ def get_headers(uploaded_file):
                             detected_header_vals[sheet_name] = []
                             transformations[sheet_name] = {"case": "basic", "h_row": 0, "h_off": 0}
 
+                    else:
+                        detected_header_vals[sheet_name] = []
+                        transformations[sheet_name] = {"case": "basic", "h_row": 0, "h_off": 0}
+                        og_detected_headers[sheet_name] = []
 
                     if not sst.no_headers:
                         with og_df:
@@ -455,8 +459,8 @@ def display_user_new_mapper():
         sst.mapper_name = mapper_name
         for q in quellen:
             if q[2] == quelle:
-                st.write(q[4])
-                st.write(q[3])
+                #st.write(q[4])
+                #st.write(q[3])
                 quell_entity_namen = list(q[4][0].keys())  # Extracts ["q_s1", "q_s2"]
 
         st.write(quell_entity_namen)
@@ -699,7 +703,6 @@ def innit_st_page(debug=False):
 
 def main():
     innit_st_page(debug=False)
-    #display_square()
     hauptbereich, login, fgt_pw, register, home = st.columns([12, 2, 2, 2, 2])
     if sst.user_logged_in:
         with hauptbereich:
@@ -757,7 +760,6 @@ def main():
             if neon_login.display_forgot_pw():
                 st.success("password changed")
                 st.rerun()
-
         elif sst.page == "sign-up":
             user = neon_login.display_signup()
             if user:

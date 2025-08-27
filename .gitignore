@@ -14,6 +14,7 @@ develop-eggs/
 dist/
 admin/
 data/
+VUE/
 downloads/
 eggs/
 .eggs/
