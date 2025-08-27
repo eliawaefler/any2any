@@ -42,8 +42,6 @@ def load_users():
 def register_user(username, email, password, first_name, last_name):
     """Register a new user."""
     users_db = load_users()
-    st.write(users_db)
-    st.write("")
     st.write(f"username {username}")
 
     if username in users_db['username'].values:

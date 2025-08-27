@@ -8,8 +8,6 @@ import time
 import uuid
 import streamlit as st
 import pandas as pd
-from streamlit.file_util import file_in_pythonpath
-
 from utils import neon
 from backend import any2any_backend
 from backend import neon_login
@@ -43,7 +41,7 @@ def get_headers(uploaded_file):
 
                         tab_left, tab_right = st.columns(2)
                         with tab_left:
-                            headers_in_row = st.toggle(f"{sheet_name} \n\ncontains headers in a row",
+                            headers_in_row = st.toggle(f"{sheet_name}   \ncontains headers in a row",
                                                        key=f"headers_in_row_{sheet_name}", value=True)
                             headers_in_col = st.toggle(f"{sheet_name}  \ncontains headers in a column",
                                                        key=f"headers_in_col_{sheet_name}")
@@ -457,7 +455,11 @@ def display_user_new_mapper():
         sst.mapper_name = mapper_name
         for q in quellen:
             if q[2] == quelle:
-                quell_entity_namen.append(q[3])
+                st.write(q[4])
+                st.write(q[3])
+                quell_entity_namen = list(q[4][0].keys())  # Extracts ["q_s1", "q_s2"]
+
+        st.write(quell_entity_namen)
         for entity in quell_entity_namen:
             sst.quell_cols[entity] = quellen[quell_entity_namen.index(entity)][4]
         for z in ziele:
