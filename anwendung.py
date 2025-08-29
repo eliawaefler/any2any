@@ -172,7 +172,8 @@ def get_headers(uploaded_file):
                                     except ValueError as e:
                                         st.error(e)
                                     #st.dataframe(any2any_backend.highlight_multiple_cells(transformed_df, tf_detected_headers[sheet_name]))
-
+        if transformations == {}:
+            transformations = {"1": ""}
         if st.button("Confirm Headers for all sheets"):
             re_list = [True, detected_header_vals, transformations]
             return re_list
@@ -423,153 +424,121 @@ def display_user_home():
     if new_file:
         display_user_new_file(new_file)
 
-
 def display_user_new_mapper():
+    import json, uuid
     st.subheader("NEW MAPPER")
-    rules = neon.read_db(CONN, "rules")
-    rule_names = ["1:1"] + [s for s in [r[1] for r in rules] if s != "1:1"]
-    rule_infos = ["direkter übertrag ohne aktion"] + [s for s in [r[2] for r in rules] if "direkter übertrag" not in s]
-    rule_param_type = [r[3] for r in rules]
 
+    # --- helpers ---
+    def uniq_order(xs): return list(dict.fromkeys(xs))
+    def get_file_dict(rows, filename):  # expects row[2]==file, row[4]=={entity:[cols]}
+        for r in rows:
+            if r[2] == filename and isinstance(r[4], dict):
+                return r[4]
+        return {}
+
+    # --- rules (aligned) ---
+    rules = neon.read_db(CONN, "rules")  # [id, name, info, param_type]
+    rule_objs = [{"name": "1:1", "info": "direkter übertrag ohne aktion", "ptype": None}] + [
+        {"name": r[1], "info": r[2], "ptype": r[3]} for r in rules if r[1] != "1:1"
+    ]
+    rule_names = [r["name"] for r in rule_objs]
+
+    # --- source/target files ---
     quellen = neon.read_db(CONN, f"{sst.username}_quelle")
-    quell_file_namen = list(set([q[2] for q in quellen]))
-    quell_entity_namen = []
-    ziele = neon.read_db(CONN, f"{sst.username}_ziel")
-    ziel_file_namen =  list(set([z[2] for z in ziele]))
-    ziel_entity_namen = []
+    ziele   = neon.read_db(CONN, f"{sst.username}_ziel")
+    src_files = uniq_order([q[2] for q in quellen])
+    tgt_files = uniq_order([z[2] for z in ziele])
 
-    if st.toggle("show rule information"):
+    if st.toggle("show rule information", key="ui_toggle_rules"):
         st.subheader("Rule Information")
-        for rule_n in range(len(rules)):
-            l, r, gr = st.columns([1, 4, 2])
-            with l:
-                st.write(rule_names[rule_n])
-            with r:
-                st.write(rule_infos[rule_n])
-            with gr:
-                st.write(f"Type HINT: {rule_param_type[rule_n]}")
+        for ro in rule_objs:
+            l, r, g = st.columns([1, 4, 2])
+            with l: st.write(ro["name"])
+            with r: st.write(ro["info"])
+            with g: st.write(f"Type HINT: {ro['ptype']}")
 
-    quelle = st.selectbox(":potable_water: Quelle", quell_file_namen)
-    mapper_name = st.text_input(":twisted_rightwards_arrows: mapper name: ")
-    ziel = st.selectbox(":dart: Ziel ", ziel_file_namen)
+    # --- top widgets (UI keys only) ---
+    ui_src = st.selectbox(":potable_water: Quelle", src_files, key="ui_src_file")
+    ui_name = st.text_input(":twisted_rightwards_arrows: mapper name:", key="ui_mapper_name")
+    ui_tgt = st.selectbox(":dart: Ziel", tgt_files, key="ui_tgt_file")
 
-    if st.button("create new mapper table"):
-        sst.quell_ziel_names[0] = quelle
-        sst.quell_ziel_names[1] = ziel
-        sst.mapper_name = mapper_name
-        for q in quellen:
-            if q[2] == quelle:
-                #st.write(q[4])
-                #st.write(q[3])
-                quell_entity_namen = list(q[4][0].keys())  # Extracts ["q_s1", "q_s2"]
-
-        st.write(quell_entity_namen)
-        for entity in quell_entity_namen:
-            sst.quell_cols[entity] = quellen[quell_entity_namen.index(entity)][4]
-        for z in ziele:
-            if z[2] == ziel:
-                ziel_entity_namen.append(z[3])
-        for entity in ziel_entity_namen:
-            sst.ziel_cols[entity] = ziele[ziel_entity_namen.index(entity)][4]
-        sst.rows = 6
+    if st.button("create new mapper table", key="ui_create_mapper"):
         sst.new_mapper = True
+        sst.mapper_name_val = ui_name or ""
+        sst.quell_ziel_names = [ui_src, ui_tgt]
+        sst.rows = max(1, int(getattr(sst, "rows", 6)))
 
-    if sst.new_mapper:
-        add_c1, add_c2, add_c3 = st.columns(3)
-        quelle, ziel = sst.quell_ziel_names
-        with add_c1:
-            st.subheader(f":potable_water: {quelle}")
-        with add_c2:
-            st.subheader(f":twisted_rightwards_arrows: {sst.mapper_name}")
-        with add_c3:
-            st.subheader(f":dart: {ziel}")
-        no_sst_quell_name = [None for _ in range(sst.rows)]
-        no_sst_quell_col = [None for _ in range(sst.rows)]
-        no_sst_rule = [None for _ in range(sst.rows)]
-        no_sst_rule_p = [None for _ in range(sst.rows)]
-        no_sst_ziel_name = [None for _ in range(sst.rows)]
-        no_sst_ziel_col = [None for _ in range(sst.rows)]
-        st.write("Use Cases")
-        st.write(sst.quell_cols["Transformationen"])
-        # TODO Fix bug
-        st.write("Use Cases")
-        for n in range(sst.rows):
+        sst.quell_cols = {}
+        for ent, cols in get_file_dict(quellen, ui_src).items():
+            sst.quell_cols[str(ent)] = list(cols)
+
+        sst.ziel_cols = {}
+        for ent, cols in get_file_dict(ziele, ui_tgt).items():
+            sst.ziel_cols[str(ent)] = list(cols)
+
+    if getattr(sst, "new_mapper", False):
+        a, b, c = st.columns(3)
+        with a: st.subheader(f":potable_water: {sst.quell_ziel_names[0]}")
+        with b: st.subheader(f":twisted_rightwards_arrows: {sst.mapper_name_val}")
+        with c: st.subheader(f":dart: {sst.quell_ziel_names[1]}")
+
+        rows = max(1, int(getattr(sst, "rows", 6)))
+        selections = []
+        src_entities = list(sst.quell_cols.keys())
+        tgt_entities = list(sst.ziel_cols.keys())
+
+        for n in range(rows):
             col1, col2, col3, col4, col5, col6 = st.columns(6)
-
             with col1:
-                no_sst_quell_name[n] = st.selectbox(
-                    f"Quelle Entity",
-                    sst.quell_cols.keys(),
-                    key=f"quel_entity_{quelle}_{n}"
-                )
+                se = st.selectbox("Quelle Entity", src_entities,
+                                  key=f"ui_{sst.mapper_name_val}_src_ent_{n}") if src_entities else None
             with col2:
-                st.write(no_sst_quell_name[n])
-                st.write(sst.quell_cols[no_sst_quell_name[n]])
-
-                no_sst_quell_col[n] = st.selectbox(
-                    f"Quelle Column",
-                    sst.quell_cols[no_sst_quell_name[n]],
-                    key=f"quel_column_{quelle}_{n}"
-                )
+                se_cols = sst.quell_cols.get(se, []) if se else []
+                sc = st.selectbox("Quelle Column", se_cols,
+                                  key=f"ui_{sst.mapper_name_val}_src_col_{n}") if se_cols else None
             with col3:
-                no_sst_rule[n] = st.selectbox(
-                    f"Rule",
-                    rule_names,
-                    key=f"rule_{quelle}_{n}"
-                )
+                ru = st.selectbox("Rule", rule_names, key=f"ui_{sst.mapper_name_val}_rule_{n}")
             with col4:
-                no_sst_rule_p[n] = st.text_input(
-                    f"Rule Param",
-                    key=f"rule_param_{quelle}_{n}"
-                )
+                rp = st.text_input("Rule Param", key=f"ui_{sst.mapper_name_val}_rulep_{n}")
             with col5:
-                no_sst_ziel_name[n] = st.selectbox(
-                    f"ZIEL Entity",
-                    sst.ziel_cols.keys(),
-                    key=f"ziel_entity_{quelle}_{n}"
-                )
+                te = st.selectbox("ZIEL Entity", tgt_entities,
+                                  key=f"ui_{sst.mapper_name_val}_tgt_ent_{n}") if tgt_entities else None
             with col6:
-                st.write(sst.ziel_cols[no_sst_ziel_name[n]])
-                no_sst_ziel_col[n] = st.selectbox(
-                    f"ZIEL Column",
-                    sst.ziel_cols[no_sst_ziel_name[n]],
-                    key=f"ziel_column_{quelle}_{n}"
-                )
-        a, b, c, d = st.columns([2, 1, 1, 8])
+                te_cols = sst.ziel_cols.get(te, []) if te else []
+                tc = st.selectbox("ZIEL Column", te_cols,
+                                  key=f"ui_{sst.mapper_name_val}_tgt_col_{n}") if te_cols else None
+            selections.append((se, sc, ru, rp, te, tc))
+
+        a, b, c, _ = st.columns([2, 1, 1, 8])
         with a:
-            # Display the mapping table
-            if st.button("save Mapper"):
-                sst.mapping_table = []
-                for n in range(sst.rows):
-                    sst.mapping_table.append({
-                        "Quelle_Sheet": no_sst_quell_name[n],
-                        "Quelle_Column": no_sst_quell_col[n],
-                        "Transformation_Rule": no_sst_rule[n],
-                        "Transformation_Rule_param": no_sst_rule_p[n],
-                        "Ziel_Sheet": no_sst_ziel_name[n],
-                        "Ziel_Column": no_sst_ziel_col[n],
-                    })
-                data = {"guid": str(uuid.uuid4()),
-                        "name": sst.mapper_name,
-                        "data": str(sst.mapping_table)}
-                if neon.write_to_db(CONN, f"{sst.username}_mapper", data) == "success":
-                    if neon.write_to_db(CONN, "log", {
-                        'guid': str(uuid.uuid4()),
-                        'activity_type': "safe mapper",
-                        'activity_desc': f"saved {sst.mapper_name} TO {sst.username}_mapper",
-                        'user_name': sst.username,
-                        'sst': ""}) == "success":
-                        st.success("mapper saved")
-                else:
-                    st.error("couldn't save mapper")
+            if st.button("save Mapper", key="ui_save_mapper"):
+                # validate
+                if not sst.mapper_name_val.strip():
+                    st.error("Mapper name required."); return
+                if any(v in (None, "") for row in selections for v in row):
+                    st.error("All fields must be filled."); return
+
+                mapping = [{
+                    "Quelle_Sheet": se, "Quelle_Column": sc,
+                    "Transformation_Rule": ru, "Transformation_Rule_param": rp,
+                    "Ziel_Sheet": te, "Ziel_Column": tc
+                } for se, sc, ru, rp, te, tc in selections]
+
+                data = {"guid": str(uuid.uuid4()), "name": sst.mapper_name_val,
+                        "data": json.dumps(mapping, ensure_ascii=False)}
+                ok = neon.write_to_db(CONN, f"{sst.username}_mapper", data) == "success"
+                log = neon.write_to_db(CONN, "log", {
+                    'guid': str(uuid.uuid4()),
+                    'activity_type': "save mapper",
+                    'activity_desc': f"saved {sst.mapper_name_val} TO {sst.username}_mapper",
+                    'user_name': sst.username, 'sst': ""
+                }) == "success"
+                st.success("mapper saved") if ok and log else st.error("couldn't save mapper")
+
         with b:
-            if st.button("add row"):
-                sst.rows += 1
-                st.rerun()
+            if st.button("add row", key="ui_add_row"): sst.rows = rows + 1
         with c:
-            if st.button("remove row"):
-                sst.rows += -1
-                st.rerun()
+            if st.button("remove row", key="ui_remove_row"): sst.rows = max(1, rows - 1)
 
 
 def display_user_execute():
@@ -631,8 +600,8 @@ def reset_sst():
     sst.mapping_table = []
     sst.m_name = ""
     sst.quell_ziel_names = ["", ""]
-    sst.quell_cols = {}
-    sst.ziel_cols = {}
+    sst.quell_cols = []
+    sst.ziel_cols = []
     sst.rows = 0
 
 
