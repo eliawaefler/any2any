@@ -132,7 +132,7 @@ def get_cells_in_range(start, end):
 
 
 def transform_2d_to_standard(df, header_names, data_start):
-    """ Transforms a multi-dimensional data format into a standard 2D DataFrame. """
+    """ Transforms a 2D data format into a standard DataFrame. """
     print(df)
     #pandas.DataFrame(columns=header_names, data=df.iloc[data_start[0]:, data_start[1]:].copy())
     transformed_df = pd.DataFrame(data=df.iloc[data_start[0]:, data_start[1]:].copy()).melt()
